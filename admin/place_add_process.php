@@ -18,56 +18,38 @@ if (empty($place_name) || empty($category)) {
     die('ข้อมูลไม่ครบ (ชื่อสถานที่ หรือ หมวดหมู่)');
 }
 
-// ===== ดึง admin_id จาก session เดิม =====
+// ===== ดึง admin_id จาก session =====
 $admin_id = $_SESSION['admin']['id'] ?? null;
 
 // ===== INSERT place =====
 $sql = "INSERT INTO place (place_name, place_description, category, admin_id)
         VALUES (?, ?, ?, ?)";
-
 $stmt = mysqli_prepare($conn, $sql);
-mysqli_stmt_bind_param(
-    $stmt,
-    "sssi",
-    $place_name,
-    $place_description,
-    $category,
-    $admin_id
-);
-
+mysqli_stmt_bind_param($stmt, "sssi", $place_name, $place_description, $category, $admin_id);
 mysqli_stmt_execute($stmt);
 
-// ===== เอา place_id ที่เพิ่งเพิ่ม =====
 $place_id = mysqli_insert_id($conn);
 
 // ===== UPLOAD IMAGES (หลายรูป) =====
 if (!empty($_FILES['place_images']['name'][0])) {
-
-    // ใช้โฟลเดอร์เดียวกับ content
-    $upload_dir = "../assets/image/";
-
+    $upload_dir = "../uploads/";
     if (!is_dir($upload_dir)) {
         mkdir($upload_dir, 0777, true);
     }
 
     foreach ($_FILES['place_images']['tmp_name'] as $key => $tmp_name) {
-
         if ($_FILES['place_images']['error'][$key] !== UPLOAD_ERR_OK) {
             continue;
         }
 
         $original_name = basename($_FILES['place_images']['name'][$key]);
-        $file_name = time() . '_' . rand(1000, 9999) . '_' . $original_name;
-        $target_file = $upload_dir . $file_name;
+        $file_name     = time() . '_' . rand(1000, 9999) . '_' . $original_name;
+        $target_file   = $upload_dir . $file_name;
 
         if (move_uploaded_file($tmp_name, $target_file)) {
+            $img_path = "uploads/" . $file_name;
 
-            // path มาตรฐานเดียวกันทั้งเว็บ
-            $img_path = "assets/image/" . $file_name;
-
-            $sql_img = "INSERT INTO place_image (place_id, image_path)
-                        VALUES (?, ?)";
-
+            $sql_img = "INSERT INTO place_image (place_id, image_path) VALUES (?, ?)";
             $stmt_img = mysqli_prepare($conn, $sql_img);
             mysqli_stmt_bind_param($stmt_img, "is", $place_id, $img_path);
             mysqli_stmt_execute($stmt_img);
@@ -75,31 +57,22 @@ if (!empty($_FILES['place_images']['name'][0])) {
     }
 }
 
-// ======================
-// อัปโหลด QR Code
-// ======================
+// ===== อัปโหลด QR Code =====
 if (!empty($_FILES['model_3d']['name'])) {
-
-    $upload_dir = "../assets/image/";
-
+    $upload_dir = "../uploads/";
     if (!is_dir($upload_dir)) {
         mkdir($upload_dir, 0777, true);
     }
 
     if ($_FILES['model_3d']['error'] === UPLOAD_ERR_OK) {
-
         $original_name = basename($_FILES['model_3d']['name']);
-        $file_name = time() . '_qr_' . rand(1000,9999) . '_' . $original_name;
-        $target_file = $upload_dir . $file_name;
+        $file_name     = time() . '_qr_' . rand(1000, 9999) . '_' . $original_name;
+        $target_file   = $upload_dir . $file_name;
 
         if (move_uploaded_file($_FILES['model_3d']['tmp_name'], $target_file)) {
+            $model_path = "uploads/" . $file_name;
 
-            $model_path = "assets/image/" . $file_name;
-
-             // ✅ แก้ตรงนี้
-            $sql_model = "INSERT INTO model_3d (model_3d, place_id)
-                          VALUES (?, ?)";
-
+            $sql_model = "INSERT INTO model_3d (model_3d, place_id) VALUES (?, ?)";
             $stmt_model = mysqli_prepare($conn, $sql_model);
             mysqli_stmt_bind_param($stmt_model, "si", $model_path, $place_id);
             mysqli_stmt_execute($stmt_model);
