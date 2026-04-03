@@ -1,7 +1,6 @@
 <?php
 include 'config.php';
 
-
 $place_id = $_GET['id'] ?? 0;
 
 /* ---------- ดึงข้อมูลสถานที่ ---------- */
@@ -31,7 +30,6 @@ $model = mysqli_fetch_assoc($result_model);
   <title><?= $place['place_name']; ?></title>
 
   <style>
-    /* ================= RESET ================= */
     * {
       box-sizing: border-box;
     }
@@ -42,7 +40,6 @@ $model = mysqli_fetch_assoc($result_model);
       background: #f2f2f2;
     }
 
-    /* ================= CARD ================= */
     .place-card {
       position: relative;
       max-width: 1200px;
@@ -56,7 +53,6 @@ $model = mysqli_fetch_assoc($result_model);
       color: #fff;
     }
 
-    /* ================= CLOSE BTN ================= */
     .close-btn {
       position: absolute;
       top: 16px;
@@ -72,12 +68,10 @@ $model = mysqli_fetch_assoc($result_model);
       z-index: 1000;
     }
 
-    /* ================= IMAGE ================= */
     .image-wrapper {
       position: relative;
       width: 100%;
       aspect-ratio: 4 / 3;
-      /* แก้ปัญหาหน้ากระตุก */
       overflow: hidden;
       border-radius: 16px;
       background: #1e1e1e;
@@ -91,7 +85,6 @@ $model = mysqli_fetch_assoc($result_model);
       transition: opacity 0.25s ease;
     }
 
-    /* ================= QR ================= */
     .model-overlay {
       position: absolute;
       bottom: 12px;
@@ -107,45 +100,36 @@ $model = mysqli_fetch_assoc($result_model);
       position: absolute;
       bottom: 20px;
       right: 20px;
-
       background: #0a7a3c;
       border: 4px solid #0a7a3c;
       border-radius: 16px;
-
       padding: 10px;
       width: 120px;
       height: 120px;
-
       text-align: center;
       box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
     }
 
-    /* ป้ายลอยด้านบน */
     .model-label {
       position: absolute;
       top: -16px;
       left: 50%;
       transform: translateX(-50%);
-
       background: #0a7a3c;
       color: #ffffff;
-
       font-size: 12.6px;
       padding: 5px 10px;
       border-radius: 12px 12px 0 0;
       font-weight: bold;
-
       white-space: nowrap;
     }
 
-    /* ================= THUMBNAIL ================= */
     .thumbnail-row {
       display: flex;
       gap: 10px;
       margin-top: 12px;
       overflow-x: auto;
       min-height: 80px;
-      /* กัน layout shift */
     }
 
     .thumbnail-row img {
@@ -161,7 +145,6 @@ $model = mysqli_fetch_assoc($result_model);
       opacity: 1;
     }
 
-    /* ================= INFO ================= */
     .place-info h1 {
       font-size: 2.4rem;
       margin-bottom: 16px;
@@ -173,9 +156,7 @@ $model = mysqli_fetch_assoc($result_model);
       white-space: pre-line;
     }
 
-    /* ================= RESPONSIVE ================= */
     @media (max-width: 900px) {
-
       .place-card {
         grid-template-columns: 1fr;
         padding: 20px;
@@ -183,31 +164,23 @@ $model = mysqli_fetch_assoc($result_model);
       }
 
       .image-wrapper {
-        /* margin-top: 60px; */
         width: 100%;
-        /* ปรับขนาดตามที่ต้องการ */
         height: auto;
-        /* รักษาสัดส่วนรูป */
-
       }
 
       .thumbnail-row {
         width: 100%;
         height: 200px;
-        /* เพิ่มความสูง */
       }
 
       .thumbnail-row img {
         width: 100%;
         height: 200px;
-        /* เพิ่มความสูง */
       }
 
       .main-image {
         width: 100%;
-        /* ปรับขนาดตามที่ต้องการ */
         height: auto;
-        /* รักษาสัดส่วนรูป */
       }
 
       .place-info h1 {
@@ -241,20 +214,17 @@ $model = mysqli_fetch_assoc($result_model);
   <div class="place-card">
 
     <!-- ปุ่มปิด -->
-    <button class="close-btn" onclick="location.href='index.php'">✕</button>
+    <button class="close-btn" onclick="location.href='/index.php'">✕</button>
 
     <!-- รูป -->
     <div>
       <div class="image-wrapper">
-        <img
-          src="/thaphet_website/<?= $images[0] ?? ''; ?>"
-          class="main-image"
-          id="mainImage">
+        <img src="/<?= $images[0] ?? ''; ?>" class="main-image" id="mainImage">
 
         <?php if ($model) { ?>
           <div class="model-box">
             <div class="model-label">รับชมโมเดล 3 มิติ</div>
-            <img src="<?= $model['model_3d']; ?>" class="model-overlay">
+            <img src="/<?= $model['model_3d']; ?>" class="model-overlay">
           </div>
         <?php } ?>
       </div>
@@ -262,9 +232,7 @@ $model = mysqli_fetch_assoc($result_model);
       <!-- Thumbnail -->
       <div class="thumbnail-row">
         <?php foreach ($images as $img) { ?>
-          <img
-            src="/thaphet_website/<?= $img; ?>"
-            onclick="changeImage(this.src)">
+          <img src="/<?= $img; ?>" onclick="changeImage(this.src)">
         <?php } ?>
       </div>
     </div>
