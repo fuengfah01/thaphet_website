@@ -10,7 +10,6 @@
     <title>Thaphet Cultural Explorer</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
-    <!-- <link rel="stylesheet" href="/thaphet_website/assets/css/style.css"> -->
     <link rel="stylesheet" href="/assets/css/style.css">
 
 </head>
@@ -21,8 +20,8 @@
     <!-- ================= HEADER ================= -->
     <header class="navbar">
         <div class="nav-container">
-            <a href="/thaphet_website/admin/login.php" class="logo">
-                <img src="/thaphet_website/assets/image/logo.png" alt="Thayang Logo">
+            <a href="/admin/login.php" class="logo">
+                <img src="/assets/image/logo.png" alt="Thayang Logo">
             </a>
 
 
@@ -108,10 +107,10 @@
             ?>
                 <div class="trip-card filter-item" data-category="<?= $category ?>">
                     <div class="trip-image">
-                        <img src="/thaphet_website/<?= $row['image_path'] ?>" alt="<?= $row['place_name'] ?>">
+                        <img src="/<?= $row['image_path'] ?>" alt="<?= $row['place_name'] ?>">
 
                         <div class="trip-overlay">
-                            <a href="/thaphet_website/place_detail.php?id=<?= $row['place_id'] ?>">
+                            <a href="/place_detail.php?id=<?= $row['place_id'] ?>">
                                 <button class="btn-primary small">View</button>
                             </a>
 
@@ -152,7 +151,7 @@
                 <a href="<?php echo $contents[0]['content_path']; ?>" target="_blank" class="contact-main-link">
 
                     <div class="contact-main">
-                        <img src="/thaphet_website/<?php echo $contents[0]['content_image']; ?>" alt="">
+                        <img src="/<?php echo $contents[0]['content_image']; ?>" alt="">
 
                         <div class="contact-overlay">
                             <h3><?php echo $contents[0]['content_name']; ?></h3>
@@ -188,7 +187,7 @@
                 ?>
                     <div class="news-item">
                         <a href="<?php echo $c_row['content_path']; ?>" target="_blank">
-                            <img src="/thaphet_website/<?php echo $c_row['content_image']; ?>" alt="">
+                            <img src="/<?php echo $c_row['content_image']; ?>" alt="">
                         </a>
 
                         <div class="news-content">
@@ -231,14 +230,13 @@
                     จะพาคุณย้อนเวลา สัมผัสอัตลักษณ์ของผู้คน บ้านเรือน และรสชาติอาหารพื้นถิ่น ที่ยังคงมีชีวิตในทุกย่างก้าว</p>
             </div>
             <div class="about-image">
-                <img src="/thaphet_website/assets/image/a2.jpg">
-
+                <img src="/assets/image/a2.jpg">
             </div>
         </div>
     </section>
 
     <!-- Chat Button -->
-    <a href="https://lin.ee/9rZ1W87" target="_blank" class="chat-button" style="text-decoration: none;">
+    <a href="https://lin.ee/bNozvTS" target="_blank" class="chat-button" style="text-decoration: none;">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
             <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
         </svg>
@@ -246,8 +244,8 @@
 
     <!-- ================= FOOTER ================= -->
     <footer class="footer">
-        <a href="/thaphet_website/index.php" class="logo1">
-            <img src="/thaphet_website/assets/image/logo.png" alt="Thayang Logo">
+        <a href="/index.php" class="logo1">
+            <img src="/assets/image/logo.png" alt="Thayang Logo">
         </a>
 
         <h5>nongphet5405@gmail.com</h5>
@@ -295,7 +293,7 @@
             if (!isDown) return;
             e.preventDefault();
             const x = e.pageX - slider.offsetLeft;
-            const walk = (x - startX) * 1.5; // ความเร็วการลาก
+            const walk = (x - startX) * 1.5;
             slider.scrollLeft = scrollLeft - walk;
         });
 
