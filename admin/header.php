@@ -4,7 +4,7 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 ?>
 
-<!-- <link rel="stylesheet" href="/thaphet_website/assets/css/admin.css"> -->
+<link rel="stylesheet" href="/assets/css/admin.css">
 
 <header class="admin-header header-green">
     <div class="header-left">
