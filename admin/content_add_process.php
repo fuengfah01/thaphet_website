@@ -14,7 +14,7 @@ $image_path = null;
 
 if (!empty($_FILES['content_image']['name'])) {
 
-    $upload_dir = "../uploads/content/";
+    $upload_dir = "../uploads/";
 
     if (!is_dir($upload_dir)) {
         mkdir($upload_dir, 0777, true);
@@ -24,7 +24,7 @@ if (!empty($_FILES['content_image']['name'])) {
     $target_file = $upload_dir . $file_name;
 
     if (move_uploaded_file($_FILES['content_image']['tmp_name'], $target_file)) {
-        $image_path = "uploads/content/" . $file_name;
+        $image_path = "uploads/" . $file_name;
     }
 }
 
