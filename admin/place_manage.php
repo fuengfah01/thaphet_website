@@ -16,7 +16,7 @@ include 'check_login.php';
 
 <?php
 $sql = "
-    SELECT p.*, pi.image_path
+    SELECT p.*, MIN(pi.image_path) AS image_path
     FROM place p
     LEFT JOIN place_image pi 
         ON p.place_id = pi.place_id
