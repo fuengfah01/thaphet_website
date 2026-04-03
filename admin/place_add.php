@@ -12,7 +12,7 @@ include 'header.php';
             <a href="place_manage.php" class="btn-back1">ย้อนกลับ</a>
         </div>
 
-        <form action="/thaphet_website/admin/place_add_process.php"
+        <form action="/admin/place_add_process.php"
             method="post"
             enctype="multipart/form-data"
             class="admin-form">
