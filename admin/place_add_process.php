@@ -22,7 +22,7 @@ mysqli_stmt_bind_param($stmt, "sssi", $place_name, $place_description, $category
 mysqli_stmt_execute($stmt);
 $place_id = mysqli_insert_id($conn);
 
-$upload_dir = "/var/www/html/uploads/";
+$upload_dir = "/var/www/html/media/";
 if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
 
 // ===== UPLOAD รูปสถานที่ =====
@@ -35,7 +35,7 @@ if (!empty($_FILES['place_images']['name'][0])) {
         $target_file   = $upload_dir . $file_name;
 
         if (move_uploaded_file($tmp_name, $target_file)) {
-            $img_path = "uploads/" . $file_name;
+            $img_path = "media/" . $file_name;
             $sql_img  = "INSERT INTO place_image (place_id, image_path) VALUES (?, ?)";
             $stmt_img = mysqli_prepare($conn, $sql_img);
             mysqli_stmt_bind_param($stmt_img, "is", $place_id, $img_path);
@@ -51,7 +51,7 @@ if (!empty($_FILES['model_3d']['name']) && $_FILES['model_3d']['error'] === UPLO
     $target_file   = $upload_dir . $file_name;
 
     if (move_uploaded_file($_FILES['model_3d']['tmp_name'], $target_file)) {
-        $model_path = "uploads/" . $file_name;
+        $model_path = "media/" . $file_name;
         $sql_model  = "INSERT INTO model_3d (model_3d, place_id) VALUES (?, ?)";
         $stmt_model = mysqli_prepare($conn, $sql_model);
         mysqli_stmt_bind_param($stmt_model, "si", $model_path, $place_id);
