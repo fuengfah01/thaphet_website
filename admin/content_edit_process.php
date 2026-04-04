@@ -12,7 +12,7 @@ $image_path = $old_image;
 
 // ถ้ามีการอัปโหลดรูปใหม่
 if (!empty($_FILES['content_image']['name'])) {
-    $upload_dir = "../uploads/";
+    $upload_dir = "/var/www/html/uploads/";
     $filename    = time() . "_" . basename($_FILES['content_image']['name']);
     $target_file = $upload_dir . $filename;
 
