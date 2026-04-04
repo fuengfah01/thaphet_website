@@ -8,6 +8,14 @@ $place_description = $_POST['place_description'] ?? '';
 $raw_category      = $_POST['category'] ?? '';
 $category          = trim(strtolower($raw_category));
 
+<?php
+// หา path ที่เขียนได้
+$paths = ['/tmp', '/var/www/html/uploads', '/var/www/html', '/tmp/uploads'];
+foreach ($paths as $p) {
+    echo $p . ' — exists: ' . (is_dir($p) ? 'yes' : 'no') . ' — writable: ' . (is_writable($p) ? 'YES ✓' : 'NO ✗') . '<br>';
+}
+die();
+
 if (!in_array($category, ['travel', 'eat'])) die('หมวดหมู่ไม่ถูกต้อง');
 if (empty($place_name)) die('ข้อมูลไม่ครบ');
 
