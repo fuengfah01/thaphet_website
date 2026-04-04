@@ -16,11 +16,9 @@ $stmt = mysqli_prepare($conn, $sql);
 mysqli_stmt_bind_param($stmt, "sssi", $place_name, $category, $place_description, $id);
 mysqli_stmt_execute($stmt);
 
-$upload_dir = "/var/www/html/uploads/";
+$upload_dir = "/var/www/html/media/";
 if (!is_dir($upload_dir)) {
     mkdir($upload_dir, 0777, true);
-} else {
-    chmod($upload_dir, 0777);
 }
 
 // ===== UPLOAD QR =====
@@ -29,7 +27,7 @@ if (!empty($_FILES['model_3d']['name']) && $_FILES['model_3d']['error'] === UPLO
     $target_file = $upload_dir . $file_name;
 
     if (move_uploaded_file($_FILES['model_3d']['tmp_name'], $target_file)) {
-        $db_path = "uploads/" . $file_name;
+        $db_path = "media/" . $file_name;
         $check   = mysqli_query($conn, "SELECT model_id FROM model_3d WHERE place_id = $id");
 
         if (mysqli_num_rows($check) > 0) {
@@ -50,7 +48,7 @@ if (!empty($_FILES['place_images']['name'][0])) {
         $target_file = $upload_dir . $new_name;
 
         if (move_uploaded_file($tmp_name, $target_file)) {
-            $db_path  = 'uploads/' . $new_name;
+            $db_path  = 'media/' . $new_name;
             $sql_img  = "INSERT INTO place_image (place_id, image_path) VALUES (?, ?)";
             $stmt_img = mysqli_prepare($conn, $sql_img);
             mysqli_stmt_bind_param($stmt_img, "is", $id, $db_path);
