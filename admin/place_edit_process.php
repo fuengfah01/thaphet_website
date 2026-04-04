@@ -17,7 +17,11 @@ mysqli_stmt_bind_param($stmt, "sssi", $place_name, $category, $place_description
 mysqli_stmt_execute($stmt);
 
 $upload_dir = "/var/www/html/uploads/";
-if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+if (!is_dir($upload_dir)) {
+    mkdir($upload_dir, 0777, true);
+} else {
+    chmod($upload_dir, 0777);
+}
 
 // ===== UPLOAD QR =====
 if (!empty($_FILES['model_3d']['name']) && $_FILES['model_3d']['error'] === UPLOAD_ERR_OK) {
