@@ -10,9 +10,10 @@ $desc       = $_POST['content_description'];
 $old_image  = $_POST['old_image'];
 $image_path = $old_image;
 
-// ถ้ามีการอัปโหลดรูปใหม่
-if (!empty($_FILES['content_image']['name'])) {
+if (!empty($_FILES['content_image']['name']) && $_FILES['content_image']['error'] === UPLOAD_ERR_OK) {
     $upload_dir = "/var/www/html/uploads/";
+    if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
+
     $filename    = time() . "_" . basename($_FILES['content_image']['name']);
     $target_file = $upload_dir . $filename;
 
@@ -21,7 +22,6 @@ if (!empty($_FILES['content_image']['name'])) {
     }
 }
 
-// ===== UPDATE ฐานข้อมูล =====
 $sql = "UPDATE content SET 
             content_name        = '$name',
             content_type        = '$type',
@@ -29,7 +29,6 @@ $sql = "UPDATE content SET
             content_description = '$desc',
             content_image       = '$image_path'
         WHERE content_id = $id";
-
 mysqli_query($conn, $sql);
 
 header("Location: content_manage.php");
