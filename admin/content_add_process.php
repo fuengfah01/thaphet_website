@@ -10,14 +10,14 @@ $admin_id            = $_SESSION['admin']['id'] ?? null;
 
 $image_path = null;
 if (!empty($_FILES['content_image']['name']) && $_FILES['content_image']['error'] === UPLOAD_ERR_OK) {
-    $upload_dir = "/var/www/html/uploads/";
+    $upload_dir = "/var/www/html/media/";
     if (!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
 
     $file_name   = time() . '_' . basename($_FILES['content_image']['name']);
     $target_file = $upload_dir . $file_name;
 
     if (move_uploaded_file($_FILES['content_image']['tmp_name'], $target_file)) {
-        $image_path = "uploads/" . $file_name;
+        $image_path = "media/" . $file_name;
     }
 }
 
