@@ -15,6 +15,13 @@ if (empty($place_name)) {
     die('ข้อมูลไม่ครบ');
 }
 
+// debug - ลบทิ้งหลังเช็คแล้ว
+$upload_dir = "../uploads/";
+echo "path: " . realpath($upload_dir) . "<br>";
+echo "exists: " . (is_dir($upload_dir) ? 'yes' : 'no') . "<br>";
+echo "writable: " . (is_writable($upload_dir) ? 'yes' : 'no') . "<br>";
+die();
+
 /* =========================
    UPDATE ตาราง place
 ========================= */
