@@ -231,12 +231,13 @@
             </div>
             <div class="about-image">
                 <img src="/assets/image/a2.jpg">
+
             </div>
         </div>
     </section>
 
     <!-- Chat Button -->
-    <a href="https://lin.ee/9rZ1W87" target="_blank" class="chat-button" style="text-decoration: none;">
+    <a href="https://lin.ee/bNozvTS" target="_blank" class="chat-button" style="text-decoration: none;">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
             <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" />
         </svg>
@@ -293,7 +294,7 @@
             if (!isDown) return;
             e.preventDefault();
             const x = e.pageX - slider.offsetLeft;
-            const walk = (x - startX) * 1.5;
+            const walk = (x - startX) * 1.5; // ความเร็วการลาก
             slider.scrollLeft = scrollLeft - walk;
         });
 
