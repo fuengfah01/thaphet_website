@@ -8,7 +8,7 @@ if (session_status() === PHP_SESSION_NONE) {
 
 <header class="admin-header header-green">
     <div class="header-left">
-        <a href="/thaphet_website/index.php" class="logo">
+        <a href="/index.php" class="logo">
                 <img src="/assets/image/logo.png" alt="Thayang Logo">
             </a>
     </div>

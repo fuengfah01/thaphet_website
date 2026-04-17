@@ -6,6 +6,8 @@ include 'header.php';
 $id = (int)($_GET['id'] ?? 0);
 
 /* ===== ข้อมูลสถานที่ ===== */
+$id = (int)($_GET['id'] ?? 0);
+
 $result = mysqli_query($conn, "
     SELECT p.*, m.model_3d
     FROM place p
@@ -25,6 +27,7 @@ $images = mysqli_query($conn, "
     WHERE place_id = $id
 ");
 ?>
+
 
 <div class="admin-container">
     <div class="content-box1">
@@ -61,6 +64,18 @@ $images = mysqli_query($conn, "
                 <textarea name="place_description" rows="4"><?= htmlspecialchars($place['place_description']) ?></textarea>
             </div>
 
+            <div class="form-group">
+                <label>เวลาเปิด</label>
+                <input type="time" name="open_time"
+                    value="<?= htmlspecialchars($place['open_time'] ?? '') ?>">
+            </div>
+
+            <div class="form-group">
+                <label>เวลาปิด</label>
+                <input type="time" name="close_time"
+                    value="<?= htmlspecialchars($place['close_time'] ?? '') ?>">
+            </div>
+
             <hr class="divider">
 
             <h3 class="section-title">รูปภาพปัจจุบัน</h3>
@@ -86,51 +101,50 @@ $images = mysqli_query($conn, "
             </div>
 
             <div class="form-group">
-                <label>QR ปัจจุบัน</label><br>
+    <label>QR ปัจจุบัน</label><br>
 
-                <style>
-                    .qr-box {
-                        background: #fafafa;
-                        border-radius: 20px;
-                        padding: 15px;
-                        display: inline-block;
-                        text-align: center;
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-                        margin-top: 10px;
-                    }
+    <style>
+        .qr-box {
+            background: #fafafa;
+            border-radius: 20px;
+            padding: 15px;
+            display: inline-block;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            margin-top: 10px;
+        }
 
-                    .qr-img {
-                        width: 150px;
-                        border-radius: 12px;
-                        display: block;
-                        margin: 0 auto 10px;
-                    }
+        .qr-img {
+            width: 150px;
+            border-radius: 12px;
+            display: block;
+            margin: 0 auto 10px;
+        }
 
-                    .no-qr {
-                        color: #888;
-                        font-size: 14px;
-                        margin-top: 8px;
-                    }
-                </style>
+        .no-qr {
+            color: #888;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+    </style>
 
-                <?php if (!empty($place['model_3d'])) { ?>
-                    <div class="qr-box">
-                        <!-- debug path: <?= htmlspecialchars($place['model_3d']) ?> -->
-                        <img src="../<?= htmlspecialchars($place['model_3d']) ?>"
-                             class="qr-img"
-                             onerror="this.style.border='2px solid red'; this.title='ไม่พบรูป: ' + this.src;">
+    <?php if (!empty($place['model_3d'])) { ?>
 
-                        <a href="model_delete.php?place_id=<?= $place['place_id'] ?>"
-                            onclick="return confirm('ลบ QR นี้จริงไหม?')"
-                            class="btn-image-delete">
-                            ลบ QR
-                        </a>
-                    </div>
-                <?php } else { ?>
-                    <p class="no-qr">ยังไม่มี QR</p>
-                <?php } ?>
-            </div>
+        <div class="qr-box">
+            <img src="../<?= htmlspecialchars($place['model_3d']) ?>" class="qr-img">
 
+            <a href="model_delete.php?place_id=<?= $place['place_id'] ?>"
+                onclick="return confirm('ลบ QR นี้จริงไหม?')"
+                class="btn-image-delete">
+                ลบ QR
+            </a>
+        </div>
+
+    <?php } else { ?>
+        <p class="no-qr">ยังไม่มี QR</p>
+    <?php } ?>
+</div>
+            
             <div class="form-group">
                 <label>เปลี่ยน QR Code</label>
                 <input type="file" name="model_3d" accept="image/*">

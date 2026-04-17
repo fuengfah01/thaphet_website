@@ -1,27 +1,16 @@
 <?php
 include '../config.php';
 include 'check_login.php';
-?>
-<!DOCTYPE html>
-<html lang="th">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>จัดการสถานที่</title>
-    <link rel="stylesheet" href="/assets/css/admin.css">
-</head>
-<body>
+include 'header.php';
 
-<?php include 'header.php'; ?>
-
-<?php
 $sql = "
-    SELECT p.*, MIN(pi.image_path) AS image_path
+    SELECT p.*, pi.image_path
     FROM place p
     LEFT JOIN place_image pi 
         ON p.place_id = pi.place_id
     GROUP BY p.place_id
 ";
+
 $result = mysqli_query($conn, $sql);
 ?>
 
@@ -77,6 +66,3 @@ $result = mysqli_query($conn, $sql);
 
     </div>
 </div>
-
-</body>
-</html>
