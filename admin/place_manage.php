@@ -11,19 +11,15 @@ $sql = "
             LIMIT 1) AS image_path
     FROM place p
 ";
-
 $result = mysqli_query($conn, $sql);
 ?>
-
 <div class="admin-container">
     <div class="content-box">
-
         <div class="content-header">
             <a href="dashboard.php" class="btn-back">ย้อนกลับ</a>
             <h2>จัดการสถานที่</h2>
             <a href="place_add.php" class="btn-add">เพิ่มสถานที่</a>
         </div>
-
         <div class="table-wrapper">
             <table class="admin-table">
                 <thead>
@@ -39,18 +35,15 @@ $result = mysqli_query($conn, $sql);
                     <tr>
                         <td class="image-cell">
                             <?php if (!empty($row['image_path'])) { ?>
-                                <img src="<?= $row['image_path']; ?>">
+                                <img src="<?= htmlspecialchars($row['image_path']) ?>">
                             <?php } else { ?>
                                 <span class="no-image">ไม่มีรูป</span>
                             <?php } ?>
                         </td>
-
                         <td><?= htmlspecialchars($row['place_name']) ?></td>
-
                         <td class="description">
                             <?= nl2br(htmlspecialchars($row['place_description'])) ?>
                         </td>
-
                         <td class="action-cell">
                             <a href="place_edit.php?id=<?= $row['place_id'] ?>" class="btn-edit">แก้ไข</a>
                             <a href="place_delete.php?id=<?= $row['place_id'] ?>"
@@ -64,6 +57,5 @@ $result = mysqli_query($conn, $sql);
                 </tbody>
             </table>
         </div>
-
     </div>
 </div>
