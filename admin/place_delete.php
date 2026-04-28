@@ -1,20 +1,16 @@
 <?php
 include '../config.php';
 include 'check_login.php';
-
 $id = (int)($_GET['id'] ?? 0);
+if ($id) {
+    // ลบรูปจาก DB ก่อน
+    mysqli_query($conn, "DELETE FROM place_image WHERE place_id = $id");
 
-// debug ชั่วคราว
-echo "id = " . $id . "<br>";
-echo "URL = " . $_SERVER['REQUEST_URI'] . "<br>";
+    // ลบ model_3d ที่ผูกกับ place นี้
+    mysqli_query($conn, "DELETE FROM model_3d WHERE place_id = $id");
 
-$del1 = mysqli_query($conn, "DELETE FROM place_image WHERE place_id = $id");
-echo "ลบ place_image: " . ($del1 ? 'OK' : mysqli_error($conn)) . "<br>";
-
-$del2 = mysqli_query($conn, "DELETE FROM model_3d WHERE place_id = $id");
-echo "ลบ model_3d: " . ($del2 ? 'OK' : mysqli_error($conn)) . "<br>";
-
-$del3 = mysqli_query($conn, "DELETE FROM place WHERE place_id = $id");
-echo "ลบ place: " . ($del3 ? 'OK' : mysqli_error($conn)) . "<br>";
-
-die("หยุดที่ debug");
+    // แล้วค่อยลบ place
+    mysqli_query($conn, "DELETE FROM place WHERE place_id = $id");
+}
+header("Location: place_manage.php");
+exit;
