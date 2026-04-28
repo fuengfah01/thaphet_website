@@ -4,11 +4,12 @@ include 'check_login.php';
 include 'header.php';
 
 $sql = "
-    SELECT p.*, pi.image_path
+    SELECT p.*, 
+           (SELECT pi.image_path 
+            FROM place_image pi 
+            WHERE pi.place_id = p.place_id 
+            LIMIT 1) AS image_path
     FROM place p
-    LEFT JOIN place_image pi 
-        ON p.place_id = pi.place_id
-    GROUP BY p.place_id
 ";
 
 $result = mysqli_query($conn, $sql);
