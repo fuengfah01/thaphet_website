@@ -164,56 +164,57 @@ $model = mysqli_fetch_assoc($result_model);
       white-space: pre-line;
     }
 
-    @media (max-width: 900px) {
-      .place-card {
-        grid-template-columns: 1fr;
-        padding: 20px;
-        margin: 20px 12px;
-      }
+        /* ================= RESPONSIVE ================= */
+        @media (max-width: 1200px) {
+            .place-card {
+                grid-template-columns: 1fr;
+                padding: 20px;
+                margin: 20px 12px;
+            }
 
-      .image-wrapper {
-        width: 100%;
-        height: auto;
-      }
+            .image-wrapper {
+                width: 100%;
+                height: auto;
+            }
 
-      .thumbnail-row {
-        width: 100%;
-        height: 200px;
-      }
+            .thumbnail-row {
+                width: 100%;
+                height: 200px;
+            }
 
-      .thumbnail-row img {
-        width: 100%;
-        height: 200px;
-      }
+            .thumbnail-row img {
+                width: 100%;
+                height: 200px;
+            }
 
-      .main-image {
-        width: 100%;
-        height: auto;
-      }
+            .main-image {
+                width: 100%;
+                height: auto;
+            }
 
-      .place-info h1 {
-        font-size: 60px;
-        margin-top: 12px;
-      }
+            .place-info h1 {
+                font-size: 50px;
+                margin-top: 12px;
+            }
 
-      .place-info p {
-        font-size: 45px;
-      }
+            .place-info p {
+                font-size: 35px;
+            }
 
-      .model-overlay {
-        width: 150px;
-      }
+            .model-overlay {
+                width: 150px;
+            }
 
-      .model-box {
-        width: 180px;
-        height: 180px;
-      }
+            .model-box {
+                width: 180px;
+                height: 180px;
+            }
 
-      .model-label {
-        font-size: 19px;
-        padding: 5px 14px;
-      }
-    }
+            .model-label {
+                font-size: 19px;
+                padding: 0px 14px;
+            }
+        }
   </style>
 </head>
 
