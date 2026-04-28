@@ -151,7 +151,7 @@
                 <a href="<?php echo $contents[0]['content_path']; ?>" target="_blank" class="contact-main-link">
 
                     <div class="contact-main">
-                        <img src="/<?php echo $contents[0]['content_image']; ?>" alt="">
+                        <img src="<?php echo $contents[0]['content_image']; ?>" alt="">
 
                         <div class="contact-overlay">
                             <h3><?php echo $contents[0]['content_name']; ?></h3>
