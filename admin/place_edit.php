@@ -64,7 +64,7 @@ $images = mysqli_query($conn, "
                 <textarea name="place_description" rows="4"><?= htmlspecialchars($place['place_description']) ?></textarea>
             </div>
 
-            <div class="form-group">
+            <!-- <div class="form-group">
                 <label>เวลาเปิด</label>
                 <input type="time" name="open_time"
                     value="<?= htmlspecialchars($place['open_time'] ?? '') ?>">
@@ -74,7 +74,7 @@ $images = mysqli_query($conn, "
                 <label>เวลาปิด</label>
                 <input type="time" name="close_time"
                     value="<?= htmlspecialchars($place['close_time'] ?? '') ?>">
-            </div>
+            </div> -->
 
             <hr class="divider">
 
@@ -83,7 +83,7 @@ $images = mysqli_query($conn, "
             <div class="image-grid">
                 <?php while ($img = mysqli_fetch_assoc($images)) { ?>
                     <div class="image-card">
-                        <img src="../<?= htmlspecialchars($img['image_path']) ?>">
+                        <img src="<?= htmlspecialchars($img['image_path']) ?>">
                         <a href="place_image_delete.php?id=<?= $img['image_id'] ?>&place_id=<?= $id ?>"
                             onclick="return confirm('ลบรูปนี้จริงไหม?')"
                             class="btn-image-delete">
@@ -131,7 +131,7 @@ $images = mysqli_query($conn, "
     <?php if (!empty($place['model_3d'])) { ?>
 
         <div class="qr-box">
-            <img src="../<?= htmlspecialchars($place['model_3d']) ?>" class="qr-img">
+            <img src="<?= htmlspecialchars($place['model_3d']) ?>" class="qr-img">
 
             <a href="model_delete.php?place_id=<?= $place['place_id'] ?>"
                 onclick="return confirm('ลบ QR นี้จริงไหม?')"
