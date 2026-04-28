@@ -107,7 +107,7 @@
             ?>
                 <div class="trip-card filter-item" data-category="<?= $category ?>">
                     <div class="trip-image">
-                        <img src="/<?= $row['image_path'] ?>" alt="<?= $row['place_name'] ?>">
+                        <img src="<?= $row['image_path'] ?>" alt="<?= $row['place_name'] ?>">
 
                         <div class="trip-overlay">
                             <a href="/place_detail.php?id=<?= $row['place_id'] ?>">
