@@ -2,122 +2,82 @@
 include '../config.php';
 include 'check_login.php';
 
-$id = (int)($_POST['place_id'] ?? 0);
+// ===== Cloudinary Config =====
+$cloud_name = "dtqdc6au1";
+$api_key    = "848722437152954";
+$api_secret = "3XUWck6U1OYO2Yx_X8HXfHClarg";
 
+function uploadToCloudinary($tmp_file, $cloud_name, $api_key, $api_secret) {
+    $timestamp = time();
+    $params = "timestamp=" . $timestamp . $api_secret;
+    $signature = sha1($params);
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, "https://api.cloudinary.com/v1_1/{$cloud_name}/image/upload");
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, [
+        'file'      => new CURLFile($tmp_file),
+        'api_key'   => $api_key,
+        'timestamp' => $timestamp,
+        'signature' => $signature,
+    ]);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    $data = json_decode($response, true);
+    return $data['secure_url'] ?? null;
+}
+
+$id                = (int)($_POST['place_id'] ?? 0);
 $place_name        = $_POST['place_name'] ?? '';
 $place_description = $_POST['place_description'] ?? '';
 $raw_category      = $_POST['category'] ?? '';
 $category          = trim(strtolower($raw_category));
-$open_time         = !empty($_POST['open_time'])  ? $_POST['open_time']  : null;
-$close_time        = !empty($_POST['close_time']) ? $_POST['close_time'] : null;
 
 if (!in_array($category, ['travel', 'eat'])) {
     die('หมวดหมู่ไม่ถูกต้อง');
 }
-
 if (empty($place_name)) {
     die('ข้อมูลไม่ครบ');
 }
 
-/* =========================
-   UPDATE ตาราง place
-========================= */
-
-$sql = "UPDATE place SET
-        place_name = ?,
-        category = ?,
-        place_description = ?,
-        open_time = ?,
-        close_time = ?
-        WHERE place_id = ?";
-
+// ===== UPDATE place =====
+$sql = "UPDATE place SET place_name = ?, category = ?, place_description = ? WHERE place_id = ?";
 $stmt = mysqli_prepare($conn, $sql);
-mysqli_stmt_bind_param($stmt, "sssssi",
-    $place_name,
-    $category,
-    $place_description,
-    $open_time,
-    $close_time,
-    $id
-);
+mysqli_stmt_bind_param($stmt, "sssi", $place_name, $category, $place_description, $id);
 mysqli_stmt_execute($stmt);
 
-
-/* =========================
-   UPLOAD / UPDATE QR (model_3d)
-========================= */
-
-if (!empty($_FILES['model_3d']['name'])) {
-
-    $upload_dir = "../uploads/";
-
-    if (!is_dir($upload_dir)) {
-        mkdir($upload_dir, 0777, true);
-    }
-
-    $file_name = time() . "_" . basename($_FILES['model_3d']['name']);
-    $target_file = $upload_dir . $file_name;
-
-    if (move_uploaded_file($_FILES['model_3d']['tmp_name'], $target_file)) {
-
-        $db_path = "uploads/" . $file_name;
-
-        $check = mysqli_query($conn,
-            "SELECT model_id FROM model_3d WHERE place_id = $id"
-        );
-
+// ===== UPLOAD QR Code via Cloudinary =====
+if (!empty($_FILES['model_3d']['name']) && $_FILES['model_3d']['error'] === UPLOAD_ERR_OK) {
+    $url = uploadToCloudinary($_FILES['model_3d']['tmp_name'], $cloud_name, $api_key, $api_secret);
+    if ($url) {
+        $check = mysqli_query($conn, "SELECT model_id FROM model_3d WHERE place_id = $id");
         if (mysqli_num_rows($check) > 0) {
-
-            mysqli_query($conn,
-                "UPDATE model_3d
-                 SET model_3d = '$db_path'
-                 WHERE place_id = $id"
-            );
-
+            $sql_m = "UPDATE model_3d SET model_3d = ? WHERE place_id = ?";
+            $stmt_m = mysqli_prepare($conn, $sql_m);
+            mysqli_stmt_bind_param($stmt_m, "si", $url, $id);
+            mysqli_stmt_execute($stmt_m);
         } else {
-
-            mysqli_query($conn,
-                "INSERT INTO model_3d (place_id, model_3d)
-                 VALUES ($id, '$db_path')"
-            );
+            $sql_m = "INSERT INTO model_3d (model_3d, place_id) VALUES (?, ?)";
+            $stmt_m = mysqli_prepare($conn, $sql_m);
+            mysqli_stmt_bind_param($stmt_m, "si", $url, $id);
+            mysqli_stmt_execute($stmt_m);
         }
     }
 }
 
-
-/* =========================
-   UPLOAD รูปเพิ่มเติม
-========================= */
-
+// ===== UPLOAD รูปเพิ่มเติม via Cloudinary =====
 if (!empty($_FILES['place_images']['name'][0])) {
-
-    $upload_dir = '../uploads/place/';
-
-    if (!is_dir($upload_dir)) {
-        mkdir($upload_dir, 0777, true);
-    }
-
     foreach ($_FILES['place_images']['tmp_name'] as $key => $tmp_name) {
+        if ($_FILES['place_images']['error'][$key] !== UPLOAD_ERR_OK) continue;
 
-        if ($_FILES['place_images']['error'][$key] === UPLOAD_ERR_OK) {
-
-            $original_name = basename($_FILES['place_images']['name'][$key]);
-            $ext = pathinfo($original_name, PATHINFO_EXTENSION);
-
-            $new_name = time() . '_' . uniqid() . '.' . $ext;
-            $target_file = $upload_dir . $new_name;
-
-            if (move_uploaded_file($tmp_name, $target_file)) {
-
-                $db_path = 'uploads/place/' . $new_name;
-
-                $sql_img = "INSERT INTO place_image (place_id, image_path)
-                            VALUES (?, ?)";
-
-                $stmt_img = mysqli_prepare($conn, $sql_img);
-                mysqli_stmt_bind_param($stmt_img, "is", $id, $db_path);
-                mysqli_stmt_execute($stmt_img);
-            }
+        $url = uploadToCloudinary($tmp_name, $cloud_name, $api_key, $api_secret);
+        if ($url) {
+            $sql_img = "INSERT INTO place_image (place_id, image_path) VALUES (?, ?)";
+            $stmt_img = mysqli_prepare($conn, $sql_img);
+            mysqli_stmt_bind_param($stmt_img, "is", $id, $url);
+            mysqli_stmt_execute($stmt_img);
         }
     }
 }
