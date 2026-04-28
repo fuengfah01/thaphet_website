@@ -1,9 +1,9 @@
 <?php
-$host = "junction.proxy.rlwy.net";
-$port = 37604;
-$user = "root";
-$pass = "LtvqydRohNxyXdZZQhtZPqEAgfiZuvsy";
-$db   = "railway";
+$host = "sql7.freesqldatabase.com";
+$user = "sql7824635";
+$pass = "iUz24J2d6E";
+$db   = "sql7824635";
+$port = 3306;
 
 $conn = mysqli_connect($host, $user, $pass, $db, $port);
 if (!$conn) {
