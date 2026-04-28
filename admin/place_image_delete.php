@@ -11,7 +11,7 @@ $row = mysqli_fetch_assoc(mysqli_query($conn, "
 "));
 
 if (!empty($row['image_path'])) {
-    $file = '../' . $row['image_path'];
+    $file = '..' . $row['image_path'];
     if (file_exists($file)) {
         unlink($file); // ลบไฟล์จริง
     }
