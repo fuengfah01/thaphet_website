@@ -3,6 +3,14 @@ include 'config.php';
 
 $place_id = $_GET['id'] ?? 0;
 
+// ===== บันทึกการเข้าชม =====
+if ($place_id > 0) {
+    $sql_log = "INSERT INTO place_view_log (place_id) VALUES (?)";
+    $stmt = mysqli_prepare($conn, $sql_log);
+    mysqli_stmt_bind_param($stmt, "i", $place_id);
+    mysqli_stmt_execute($stmt);
+}
+
 /* ---------- ดึงข้อมูลสถานที่ ---------- */
 $sql_place = "SELECT * FROM place WHERE place_id = $place_id";
 $result_place = mysqli_query($conn, $sql_place);
