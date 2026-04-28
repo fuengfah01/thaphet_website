@@ -39,7 +39,7 @@ $result = mysqli_query($conn, $sql);
                     <tr>
                         <td class="image-cell">
                             <?php if (!empty($row['image_path'])) { ?>
-                                <img src="..<?= $row['image_path']; ?>">
+                                <img src="<?= $row['image_path']; ?>">
                             <?php } else { ?>
                                 <span class="no-image">ไม่มีรูป</span>
                             <?php } ?>
