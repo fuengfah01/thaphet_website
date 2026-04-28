@@ -42,7 +42,7 @@ $result = mysqli_query($conn, $sql);
 
                         <td class="image-cell">
                             <?php if ($row['content_image']) { ?>
-                                <img src="../<?= $row['content_image'] ?>">
+                                <img src="<?= $row['content_image'] ?>">
                             <?php } else { ?>
                                 <span class="no-image">ไม่มีรูป</span>
                             <?php } ?>
