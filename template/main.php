@@ -187,7 +187,7 @@
                 ?>
                     <div class="news-item">
                         <a href="<?php echo $c_row['content_path']; ?>" target="_blank">
-                            <img src="/<?php echo $c_row['content_image']; ?>" alt="">
+                            <img src="<?php echo $c_row['content_image']; ?>" alt="">
                         </a>
 
                         <div class="news-content">
