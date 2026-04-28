@@ -192,22 +192,22 @@ if (isset($_SESSION['survey_done'])) {
             <label class="group-label">อายุ</label>
             <div class="radio-grid">
                 <label class="radio-option">
-                    <input type="radio" name="age_range" value="12-20"> 12-20
+                    <input type="radio" name="age_range" value="15-25"> 15-25
                 </label>
                 <label class="radio-option">
-                    <input type="radio" name="age_range" value="21-30"> 21-30
+                    <input type="radio" name="age_range" value="26-35"> 26-35
                 </label>
                 <label class="radio-option">
-                    <input type="radio" name="age_range" value="31-42"> 31-42
+                    <input type="radio" name="age_range" value="36-45"> 36-45
                 </label>
                 <label class="radio-option">
-                    <input type="radio" name="age_range" value="43-52"> 43-52
+                    <input type="radio" name="age_range" value="46-55"> 46-55
                 </label>
                 <label class="radio-option">
-                    <input type="radio" name="age_range" value="53-60"> 53-60
+                    <input type="radio" name="age_range" value="56-65"> 56-65
                 </label>
                 <label class="radio-option">
-                    <input type="radio" name="age_range" value="60+"> 60+
+                    <input type="radio" name="age_range" value="65+"> 65+
                 </label>
             </div>
             <p class="error-msg" id="err-age">* กรุณาเลือกช่วงอายุ</p>
