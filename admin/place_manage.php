@@ -3,16 +3,15 @@ include '../config.php';
 include 'check_login.php';
 include 'header.php';
 
-$sql = "SELECT p.* FROM place p";
+$sql = "
+    SELECT p.*, 
+           (SELECT pi.image_path 
+            FROM place_image pi 
+            WHERE pi.place_id = p.place_id
+            LIMIT 1) AS image_path
+    FROM place p
+";
 $result = mysqli_query($conn, $sql);
-
-$places = [];
-while ($row = mysqli_fetch_assoc($result)) {
-    $pid = $row['place_id'];
-    $img = mysqli_query($conn, "SELECT image_path FROM place_image WHERE place_id = $pid LIMIT 1");
-    $row['image_path'] = ($img && mysqli_num_rows($img) > 0) ? mysqli_fetch_assoc($img)['image_path'] : '';
-    $places[] = $row;
-}
 ?>
 <div class="admin-container">
     <div class="content-box">
@@ -32,14 +31,14 @@ while ($row = mysqli_fetch_assoc($result)) {
                     </tr>
                 </thead>
                 <tbody>
-                <?php foreach ($places as $row): ?>
+                <?php while ($row = mysqli_fetch_assoc($result)) { ?>
                     <tr>
                         <td class="image-cell">
-                            <?php if (!empty($row['image_path'])): ?>
+                            <?php if (!empty($row['image_path'])) { ?>
                                 <img src="<?= htmlspecialchars($row['image_path']) ?>">
-                            <?php else: ?>
+                            <?php } else { ?>
                                 <span class="no-image">ไม่มีรูป</span>
-                            <?php endif; ?>
+                            <?php } ?>
                         </td>
                         <td><?= htmlspecialchars($row['place_name']) ?></td>
                         <td class="description">
@@ -54,7 +53,7 @@ while ($row = mysqli_fetch_assoc($result)) {
                             </a>
                         </td>
                     </tr>
-                <?php endforeach; ?>
+                <?php } ?>
                 </tbody>
             </table>
         </div>
