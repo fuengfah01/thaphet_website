@@ -7,7 +7,7 @@ $sql = "
     SELECT p.*, 
            (SELECT pi.image_path 
             FROM place_image pi 
-            WHERE pi.place_id = p.place_id 
+            WHERE pi.place_id = p.place_id
             LIMIT 1) AS image_path
     FROM place p
 ";
