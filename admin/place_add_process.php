@@ -27,18 +27,17 @@ $admin_id = $_SESSION['admin']['id'] ?? null;
 $sql = "INSERT INTO place (place_name, place_description, category, admin_id, open_time, close_time)
         VALUES (?, ?, ?, ?, ?, ?)";
 
+// ===== INSERT place =====
+$sql = "INSERT INTO place (place_name, place_description, category)
+        VALUES (?, ?, ?)";
 $stmt = mysqli_prepare($conn, $sql);
 mysqli_stmt_bind_param(
     $stmt,
-    "sssiss",
+    "sss",
     $place_name,
     $place_description,
-    $category,
-    $admin_id,
-    $open_time,
-    $close_time
+    $category
 );
-
 mysqli_stmt_execute($stmt);
 
 // ===== เอา place_id ที่เพิ่งเพิ่ม =====
@@ -100,7 +99,6 @@ if (!empty($_FILES['model_3d']['name'])) {
 
             $model_path = "assets/image/" . $file_name;
 
-             // ✅ แก้ตรงนี้
             $sql_model = "INSERT INTO model_3d (model_3d, place_id)
                           VALUES (?, ?)";
 
