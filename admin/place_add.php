@@ -37,16 +37,6 @@ include 'header.php';
             </div>
 
             <div class="form-group">
-                <label>เวลาเปิด</label>
-                <input type="time" name="open_time">
-            </div>
-
-            <div class="form-group">
-                <label>เวลาปิด</label>
-                <input type="time" name="close_time">
-            </div>
-
-            <div class="form-group">
                 <label>อัปโหลดรูป (เลือกได้หลายรูป)</label>
                 <input type="file" name="place_images[]" accept="image/*" multiple>
             </div>
