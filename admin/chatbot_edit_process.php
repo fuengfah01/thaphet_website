@@ -1,0 +1,237 @@
+<?php
+include 'check_login.php';
+include '../config.php';
+
+$type = $_POST['record_type'] ?? $_POST['type'] ?? '';
+$id   = intval($_POST['id'] ?? 0);
+
+// ── Helper: upload image ──────────────────────────────────────────
+function uploadImage($fieldName, $uploadDir = '../assets/image/') {
+    if (empty($_FILES[$fieldName]['name'])) return null;
+
+    $file    = $_FILES[$fieldName];
+    $allowed = ['image/jpeg','image/png','image/webp','image/gif'];
+    $maxSize = 5 * 1024 * 1024;
+
+    if (!in_array($file['type'], $allowed)) return null;
+    if ($file['size'] > $maxSize)           return null;
+
+    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+
+    $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $filename = uniqid('img_') . '.' . strtolower($ext);
+    $dest     = $uploadDir . $filename;
+
+    if (move_uploaded_file($file['tmp_name'], $dest)) {
+        return 'assets/image/' . $filename;
+    }
+    return null;
+}
+
+// ── Helper: safe string ───────────────────────────────────────────
+function esc($conn, $val) {
+    return mysqli_real_escape_string($conn, trim($val));
+}
+
+$allowed_types = ['place', 'restaurant', 'activity', 'souvenir', 'about']; // เพิ่ม about
+if (!in_array($type, $allowed_types) || !$id) {
+    header('Location: chatbot_manage.php');
+    exit;
+}
+
+$redirect = 'chatbot_manage.php';
+$msg      = '';
+$msg_type = 'success';
+
+/* ════════════════════════════════════════════════════════
+   DELETE
+════════════════════════════════════════════════════════ */
+if (!empty($_POST['_delete'])) {
+    $tbl_map = [
+        'place'      => ['table' => 'chatbot_place',  'pk' => 'place_id'],
+        'restaurant' => ['table' => 'restaurant',      'pk' => 'restaurant_id'],
+        'activity'   => ['table' => 'activity',        'pk' => 'activity_id'],
+        'souvenir'   => ['table' => 'souvenir_shop',   'pk' => 'shop_id'],
+        'about'      => ['table' => 'about_us',        'pk' => 'about_id'],
+    ];
+    if (isset($tbl_map[$type])) {
+        $t  = $tbl_map[$type]['table'];
+        $pk = $tbl_map[$type]['pk'];
+        mysqli_query($conn, "DELETE FROM $t WHERE $pk = $id");
+        $msg      = 'ลบข้อมูลเรียบร้อย';
+        $redirect = "chatbot_manage.php?tab=$type";
+    }
+
+    session_start_if_not_started();
+    $_SESSION['flash_msg']  = $msg;
+    $_SESSION['flash_type'] = $msg_type;
+    header('Location: ' . $redirect);
+    exit;
+}
+
+/* ════════════════════════════════════════════════════════
+   UPDATE PLACE → chatbot_place
+════════════════════════════════════════════════════════ */
+if ($type === 'place') {
+    $name    = esc($conn, $_POST['place_name'] ?? '');
+    $desc    = esc($conn, $_POST['place_description'] ?? '');
+    $hi      = esc($conn, $_POST['highlight'] ?? '');
+    $cat     = esc($conn, $_POST['category'] ?? '');
+    $open    = esc($conn, $_POST['open_time'] ?? '');
+    $cls     = esc($conn, $_POST['close_time'] ?? '');
+    $map_url = esc($conn, $_POST['map_url'] ?? '');
+    $newImg  = uploadImage('cover_image');
+
+    $imgSet = $newImg ? ", cover_image = '$newImg'" : '';
+    $mapVal = $map_url ? "'$map_url'" : 'NULL';
+
+    $sql = "UPDATE chatbot_place SET
+                place_name        = '$name',
+                place_description = '$desc',
+                highlight         = '$hi',
+                category          = '$cat',
+                open_time         = '$open',
+                close_time        = '$cls',
+                map_url           = $mapVal
+                $imgSet
+            WHERE place_id = $id";
+
+    if (mysqli_query($conn, $sql)) {
+        $msg      = 'แก้ไขสถานที่เรียบร้อย';
+        $redirect = 'chatbot_manage.php?tab=place';
+    } else {
+        $msg      = 'เกิดข้อผิดพลาด: ' . mysqli_error($conn);
+        $msg_type = 'danger';
+        $redirect = 'chatbot_manage.php?tab=place';
+    }
+}
+
+/* ════════════════════════════════════════════════════════
+   UPDATE RESTAURANT
+════════════════════════════════════════════════════════ */
+elseif ($type === 'restaurant') {
+    $name    = esc($conn, $_POST['name'] ?? '');
+    $cat     = esc($conn, $_POST['category'] ?? '');
+    $hi      = esc($conn, $_POST['highlight'] ?? '');
+    $open    = esc($conn, $_POST['open_hours'] ?? '');
+    $cls     = esc($conn, $_POST['close_hours'] ?? '');
+    $map_url = esc($conn, $_POST['map_url'] ?? '');
+    $credit  = esc($conn, $_POST['image_credit'] ?? '');
+    $newImg  = uploadImage('cover_image');
+
+    $imgSet    = $newImg  ? ", cover_image = '$newImg'" : '';
+    $mapVal    = $map_url ? "'$map_url'" : 'NULL';
+    $creditVal = $credit  ? "'$credit'"  : 'NULL';
+
+    $sql = "UPDATE restaurant SET
+                name         = '$name',
+                category     = '$cat',
+                highlight    = '$hi',
+                open_hours   = '$open',
+                close_hours  = '$cls',
+                map_url      = $mapVal,
+                image_credit = $creditVal
+                $imgSet
+            WHERE restaurant_id = $id";
+
+    if (mysqli_query($conn, $sql)) {
+        $msg      = 'แก้ไขร้านอาหารเรียบร้อย';
+        $redirect = 'chatbot_manage.php?tab=restaurant';
+    } else {
+        $msg      = 'เกิดข้อผิดพลาด: ' . mysqli_error($conn);
+        $msg_type = 'danger';
+        $redirect = 'chatbot_manage.php?tab=restaurant';
+    }
+}
+
+/* ════════════════════════════════════════════════════════
+   UPDATE ACTIVITY
+════════════════════════════════════════════════════════ */
+elseif ($type === 'activity') {
+    $name     = esc($conn, $_POST['name'] ?? '');
+    $act_type = esc($conn, $_POST['act_type'] ?? '');
+    $desc     = esc($conn, $_POST['description'] ?? '');
+
+    $sql = "UPDATE activity SET
+                name        = '$name',
+                type        = '$act_type',
+                description = '$desc'
+            WHERE activity_id = $id";
+
+    if (mysqli_query($conn, $sql)) {
+        $msg      = 'แก้ไขกิจกรรมเรียบร้อย';
+        $redirect = 'chatbot_manage.php?tab=activity';
+    } else {
+        $msg      = 'เกิดข้อผิดพลาด: ' . mysqli_error($conn);
+        $msg_type = 'danger';
+        $redirect = 'chatbot_manage.php?tab=activity';
+    }
+}
+
+/* ════════════════════════════════════════════════════════
+   UPDATE SOUVENIR SHOP
+════════════════════════════════════════════════════════ */
+elseif ($type === 'souvenir') {
+    $name    = esc($conn, $_POST['name'] ?? '');
+    $desc    = esc($conn, $_POST['description'] ?? '');
+    $phone   = esc($conn, $_POST['phone'] ?? '');
+    $open    = esc($conn, $_POST['open_hours'] ?? '');
+    $cls     = esc($conn, $_POST['close_hours'] ?? '');
+    $map_url = esc($conn, $_POST['map_url'] ?? '');
+    $credit  = esc($conn, $_POST['image_credit'] ?? '');
+    $newImg  = uploadImage('cover_image');
+
+    $imgSet    = $newImg  ? ", cover_image = '$newImg'" : '';
+    $phVal     = $phone   ? "'$phone'"   : 'NULL';
+    $mapVal    = $map_url ? "'$map_url'" : 'NULL';
+    $creditVal = $credit  ? "'$credit'"  : 'NULL';
+
+    $sql = "UPDATE souvenir_shop SET
+                name         = '$name',
+                description  = '$desc',
+                phone        = $phVal,
+                open_hours   = '$open',
+                close_hours  = '$cls',
+                map_url      = $mapVal,
+                image_credit = $creditVal
+                $imgSet
+            WHERE shop_id = $id";
+
+    if (mysqli_query($conn, $sql)) {
+        $msg      = 'แก้ไขร้านของฝากเรียบร้อย';
+        $redirect = 'chatbot_manage.php?tab=souvenir';
+    } else {
+        $msg      = 'เกิดข้อผิดพลาด: ' . mysqli_error($conn);
+        $msg_type = 'danger';
+        $redirect = 'chatbot_manage.php?tab=souvenir';
+    }
+}
+
+/* ════════════════════════════════════════════════════════
+   UPDATE ABOUT US
+════════════════════════════════════════════════════════ */
+elseif ($type === 'about') {
+    $content = esc($conn, $_POST['content'] ?? '');
+
+    $sql = "UPDATE about_us SET content = '$content' WHERE about_id = $id";
+
+    if (mysqli_query($conn, $sql)) {
+        $msg      = 'แก้ไขเนื้อหาเกี่ยวกับเราเรียบร้อย';
+        $redirect = 'chatbot_manage.php?tab=about';
+    } else {
+        $msg      = 'เกิดข้อผิดพลาด: ' . mysqli_error($conn);
+        $msg_type = 'danger';
+        $redirect = 'chatbot_manage.php?tab=about';
+    }
+}
+
+session_start_if_not_started();
+$_SESSION['flash_msg']  = $msg;
+$_SESSION['flash_type'] = $msg_type;
+header('Location: ' . $redirect);
+exit;
+
+function session_start_if_not_started() {
+    if (session_status() === PHP_SESSION_NONE) session_start();
+}
+
