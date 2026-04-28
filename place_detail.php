@@ -227,12 +227,12 @@ $model = mysqli_fetch_assoc($result_model);
     <!-- รูป -->
     <div>
       <div class="image-wrapper">
-        <img src="/<?= $images[0] ?? ''; ?>" class="main-image" id="mainImage">
+        <img src="<?= $images[0] ?? ''; ?>" class="main-image" id="mainImage">
 
         <?php if ($model) { ?>
           <div class="model-box">
             <div class="model-label">รับชมโมเดล 3 มิติ</div>
-            <img src="/<?= $model['model_3d']; ?>" class="model-overlay">
+            <img src="<?= $model['model_3d']; ?>" class="model-overlay">
           </div>
         <?php } ?>
       </div>
@@ -240,7 +240,7 @@ $model = mysqli_fetch_assoc($result_model);
       <!-- Thumbnail -->
       <div class="thumbnail-row">
         <?php foreach ($images as $img) { ?>
-          <img src="/<?= $img; ?>" onclick="changeImage(this.src)">
+          <img src="<?= $img; ?>" onclick="changeImage(this.src)">
         <?php } ?>
       </div>
     </div>
