@@ -5,35 +5,49 @@ include '../config.php';
 $type = $_POST['record_type'] ?? $_POST['type'] ?? '';
 $id   = intval($_POST['id'] ?? 0);
 
-// ── Helper: upload image ──────────────────────────────────────────
-function uploadImage($fieldName, $uploadDir = '../assets/image/') {
+// ── Helper: upload image to Cloudinary ───────────────────────────
+function uploadImage($fieldName)
+{
     if (empty($_FILES[$fieldName]['name'])) return null;
 
     $file    = $_FILES[$fieldName];
-    $allowed = ['image/jpeg','image/png','image/webp','image/gif'];
+    $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     $maxSize = 5 * 1024 * 1024;
 
     if (!in_array($file['type'], $allowed)) return null;
-    if ($file['size'] > $maxSize)           return null;
+    if ($file['size'] > $maxSize) return null;
 
-    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+    $cloud_name = 'dtqdc6au1';
+    $api_key    = '848722437152954';
+    $api_secret = '3XUWck6U1OYO2Yx_X8HXfHClarg';
+    $timestamp  = time();
+    $signature  = sha1("timestamp={$timestamp}{$api_secret}");
 
-    $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = uniqid('img_') . '.' . strtolower($ext);
-    $dest     = $uploadDir . $filename;
+    $ch = curl_init("https://api.cloudinary.com/v1_1/{$cloud_name}/image/upload");
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => [
+            'file'      => new CURLFile($file['tmp_name'], $file['type'], $file['name']),
+            'api_key'   => $api_key,
+            'timestamp' => $timestamp,
+            'signature' => $signature,
+        ],
+    ]);
+    $response = curl_exec($ch);
+    curl_close($ch);
 
-    if (move_uploaded_file($file['tmp_name'], $dest)) {
-        return 'assets/image/' . $filename;
-    }
-    return null;
+    $data = json_decode($response, true);
+    return $data['secure_url'] ?? null;
 }
 
 // ── Helper: safe string ───────────────────────────────────────────
-function esc($conn, $val) {
+function esc($conn, $val)
+{
     return mysqli_real_escape_string($conn, trim($val));
 }
 
-$allowed_types = ['place', 'restaurant', 'activity', 'souvenir', 'about']; // เพิ่ม about
+$allowed_types = ['place', 'restaurant', 'activity', 'souvenir', 'about'];
 if (!in_array($type, $allowed_types) || !$id) {
     header('Location: chatbot_manage.php');
     exit;
@@ -82,7 +96,7 @@ if ($type === 'place') {
     $map_url = esc($conn, $_POST['map_url'] ?? '');
     $newImg  = uploadImage('cover_image');
 
-    $imgSet = $newImg ? ", cover_image = '$newImg'" : '';
+    $imgSet = $newImg ? ", cover_image = '" . mysqli_real_escape_string($conn, $newImg) . "'" : '';
     $mapVal = $map_url ? "'$map_url'" : 'NULL';
 
     $sql = "UPDATE chatbot_place SET
@@ -119,7 +133,7 @@ elseif ($type === 'restaurant') {
     $credit  = esc($conn, $_POST['image_credit'] ?? '');
     $newImg  = uploadImage('cover_image');
 
-    $imgSet    = $newImg  ? ", cover_image = '$newImg'" : '';
+    $imgSet    = $newImg  ? ", cover_image = '" . mysqli_real_escape_string($conn, $newImg) . "'" : '';
     $mapVal    = $map_url ? "'$map_url'" : 'NULL';
     $creditVal = $credit  ? "'$credit'"  : 'NULL';
 
@@ -181,7 +195,7 @@ elseif ($type === 'souvenir') {
     $credit  = esc($conn, $_POST['image_credit'] ?? '');
     $newImg  = uploadImage('cover_image');
 
-    $imgSet    = $newImg  ? ", cover_image = '$newImg'" : '';
+    $imgSet    = $newImg  ? ", cover_image = '" . mysqli_real_escape_string($conn, $newImg) . "'" : '';
     $phVal     = $phone   ? "'$phone'"   : 'NULL';
     $mapVal    = $map_url ? "'$map_url'" : 'NULL';
     $creditVal = $credit  ? "'$credit'"  : 'NULL';
@@ -231,7 +245,7 @@ $_SESSION['flash_type'] = $msg_type;
 header('Location: ' . $redirect);
 exit;
 
-function session_start_if_not_started() {
+function session_start_if_not_started()
+{
     if (session_status() === PHP_SESSION_NONE) session_start();
 }
-
