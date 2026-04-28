@@ -18,7 +18,7 @@ for ($i = 6; $i >= 0; $i--) {
     $date = date('Y-m-d', strtotime("-$i days"));
 
     // label วันภาษาไทย
-    $day_th = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
+    $day_th = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัส', 'ศุกร์', 'เสาร์'];
     $dow = (int)date('w', strtotime($date));
     $visitor_labels[] = $day_th[$dow];
 
@@ -54,7 +54,7 @@ if (empty($top_place_labels)) {
 }
 
 // ===== ช่วงอายุ (visitor_log) =====
-$age_ranges  = ['12-20','21-30','31-42','43-52','53-60','60+'];
+$age_ranges  = ['15-25', '26-35', '36-45', '46-55', '56-65', '65+'];
 $age_counts  = [];
 $age_total_res = mysqli_query($conn, "SELECT COUNT(*) AS total FROM visitor_log");
 $age_total   = (int)(mysqli_fetch_assoc($age_total_res)['total'] ?? 1);
@@ -92,6 +92,18 @@ $top_place_labels_json = json_encode($top_place_labels, JSON_UNESCAPED_UNICODE);
 $top_place_data_json   = json_encode($top_place_data);
 $gender_labels_json    = json_encode($gender_labels, JSON_UNESCAPED_UNICODE);
 $gender_data_json      = json_encode($gender_data);
+
+
+// ===== จำนวนเนื้อหาแชทบอท =====
+$chatbot_count_res = mysqli_query($conn, "
+SELECT
+(SELECT COUNT(*) FROM place) +
+(SELECT COUNT(*) FROM restaurant) +
+(SELECT COUNT(*) FROM activity) +
+(SELECT COUNT(*) FROM souvenir_shop) +
+(SELECT COUNT(*) FROM about_us) AS total
+");
+$chatbot_count = mysqli_fetch_assoc($chatbot_count_res)['total'] ?? 0;
 ?>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -127,7 +139,7 @@ $gender_data_json      = json_encode($gender_data);
         display: flex;
         align-items: center;
         gap: 16px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
         text-decoration: none;
         color: inherit;
         transition: transform 0.18s, box-shadow 0.18s;
@@ -136,7 +148,7 @@ $gender_data_json      = json_encode($gender_data);
 
     .quick-card:hover {
         transform: translateY(-3px);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.10);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10);
         border-color: #2d7a3a;
     }
 
@@ -151,10 +163,25 @@ $gender_data_json      = json_encode($gender_data);
         flex-shrink: 0;
     }
 
-    .icon-green  { background: #e6f4ea; color: #2d7a3a; }
-    .icon-blue   { background: #e3f0fb; color: #2563eb; }
-    .icon-amber  { background: #fef9e7; color: #d97706; }
-    .icon-purple { background: #f3e8ff; color: #7c3aed; }
+    .icon-green {
+        background: #e6f4ea;
+        color: #2d7a3a;
+    }
+
+    .icon-blue {
+        background: #e3f0fb;
+        color: #2563eb;
+    }
+
+    .icon-amber {
+        background: #fef9e7;
+        color: #d97706;
+    }
+
+    .icon-purple {
+        background: #f3e8ff;
+        color: #7c3aed;
+    }
 
     .quick-card-info p {
         margin: 0;
@@ -183,14 +210,16 @@ $gender_data_json      = json_encode($gender_data);
     }
 
     @media (max-width: 900px) {
-        .chart-grid { grid-template-columns: 1fr; }
+        .chart-grid {
+            grid-template-columns: 1fr;
+        }
     }
 
     .chart-card {
         background: #fff;
         border-radius: 18px;
         padding: 24px;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
     }
 
     .chart-card h4 {
@@ -279,9 +308,19 @@ $gender_data_json      = json_encode($gender_data);
         transition: opacity 0.15s;
     }
 
-    .btn-export:hover { opacity: 0.85; }
-    .btn-excel { background: #1d6f42; color: #fff; }
-    .btn-pdf   { background: #c0392b; color: #fff; }
+    .btn-export:hover {
+        opacity: 0.85;
+    }
+
+    .btn-excel {
+        background: #1d6f42;
+        color: #fff;
+    }
+
+    .btn-pdf {
+        background: #c0392b;
+        color: #fff;
+    }
 
     /* ===== Empty state ===== */
     .empty-state {
@@ -323,6 +362,18 @@ $gender_data_json      = json_encode($gender_data);
             <div class="quick-card-info">
                 <p>คอนเทนต์ทั้งหมด</p>
                 <h3><?= $content_count ?></h3>
+                <span>ไปจัดการ →</span>
+            </div>
+        </a>
+
+        <!-- กล่องใหม่: เนื้อหาแชทบอท -->
+        <a href="chatbot_manage.php" class="quick-card">
+            <div class="quick-card-icon icon-purple">
+                <i class="fa fa-robot"></i>
+            </div>
+            <div class="quick-card-info">
+                <p>เนื้อหาแชทบอท</p>
+                <h3><?= $chatbot_count ?></h3>
                 <span>ไปจัดการ →</span>
             </div>
         </a>
@@ -372,7 +423,7 @@ $gender_data_json      = json_encode($gender_data);
             <h4>ช่วงอายุของผู้ใช้งานเว็บไซต์</h4>
             <p class="chart-subtitle">จากข้อมูลแบบสอบถาม (ทั้งหมด <?= $age_total ?> คน)</p>
             <?php
-            $age_colors = ['#2d7a3a','#d4a017','#c0796a','#2c3e7a','#e07b30','#5b8de8'];
+            $age_colors = ['#2d7a3a', '#d4a017', '#c0796a', '#2c3e7a', '#e07b30', '#5b8de8'];
             $i = 0;
             ?>
             <ul class="age-bar-list">
@@ -382,13 +433,13 @@ $gender_data_json      = json_encode($gender_data);
                     $color = $age_colors[$i % count($age_colors)];
                     $i++;
                 ?>
-                <li class="age-bar-item">
-                    <span class="age-label"><?= $range ?></span>
-                    <div class="age-track">
-                        <div class="age-fill" style="width:<?= $pct ?>%;background:<?= $color ?>;"></div>
-                    </div>
-                    <span class="age-pct"><?= $pct ?>%<br><small style="font-weight:400;color:#999;">(<?= $cnt ?>)</small></span>
-                </li>
+                    <li class="age-bar-item">
+                        <span class="age-label"><?= $range ?></span>
+                        <div class="age-track">
+                            <div class="age-fill" style="width:<?= $pct ?>%;background:<?= $color ?>;"></div>
+                        </div>
+                        <span class="age-pct"><?= $pct ?>%<br><small style="font-weight:400;color:#999;">(<?= $cnt ?>)</small></span>
+                    </li>
                 <?php endforeach; ?>
             </ul>
         </div>
@@ -413,309 +464,366 @@ $gender_data_json      = json_encode($gender_data);
 </div>
 
 <script>
-// ===== ข้อมูลจาก PHP =====
-const visitorLabels = <?= $visitor_labels_json ?>;
-const visitorData   = <?= $visitor_data_json ?>;
-const placeLabels   = <?= $top_place_labels_json ?>;
-const placeData     = <?= $top_place_data_json ?>;
-const genderLabels  = <?= $gender_labels_json ?>;
-const genderData    = <?= $gender_data_json ?>;
+    // ===== ข้อมูลจาก PHP =====
+    const visitorLabels = <?= $visitor_labels_json ?>;
+    const visitorData = <?= $visitor_data_json ?>;
+    const placeLabels = <?= $top_place_labels_json ?>;
+    const placeData = <?= $top_place_data_json ?>;
+    const genderLabels = <?= $gender_labels_json ?>;
+    const genderData = <?= $gender_data_json ?>;
 
-// ===== 1. Visitor Bar Chart =====
-const visitorCtx = document.getElementById('visitorChart').getContext('2d');
-new Chart(visitorCtx, {
-    type: 'bar',
-    data: {
-        labels: visitorLabels,
-        datasets: [{
-            data: visitorData,
-            backgroundColor: ['#c0392b','#d4a017','#c0796a','#2d7a3a','#e07b30','#5b8de8','#2c3e7a'],
-            borderRadius: 6,
-            borderSkipped: false,
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                callbacks: {
-                    label: ctx => ` ${ctx.parsed.y} คน`
-                }
-            }
-        },
-        scales: {
-            x: {
-                grid: { display: false },
-                ticks: { font: { size: 12 } }
-            },
-            y: {
-                beginAtZero: true,
-                grid: { color: '#eee' },
-                ticks: {
-                    font: { size: 11 },
-                    stepSize: 1,
-                    callback: v => Number.isInteger(v) ? v : null
-                }
-            }
-        }
-    }
-});
-
-// ===== 2. Place Horizontal Bar =====
-const placeCtxEl = document.getElementById('placeChart');
-if (placeCtxEl) {
-    const placeCtx = placeCtxEl.getContext('2d');
-    new Chart(placeCtx, {
+    // ===== 1. Visitor Bar Chart =====
+    const visitorCtx = document.getElementById('visitorChart').getContext('2d');
+    new Chart(visitorCtx, {
         type: 'bar',
         data: {
-            labels: placeLabels,
+            labels: visitorLabels,
             datasets: [{
-                data: placeData,
-                backgroundColor: ['#d4a017','#5b8de8','#2c3e7a','#c0796a','#2d7a3a'],
-                borderRadius: 5,
+                data: visitorData,
+                backgroundColor: ['#c0392b', '#d4a017', '#c0796a', '#2d7a3a', '#e07b30', '#5b8de8', '#2c3e7a'],
+                borderRadius: 6,
                 borderSkipped: false,
             }]
         },
         options: {
-            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: false
+                },
                 tooltip: {
                     callbacks: {
-                        label: ctx => ` ${ctx.parsed.x} ครั้ง`
+                        label: ctx => ` ${ctx.parsed.y} คน`
                     }
                 }
             },
             scales: {
                 x: {
-                    beginAtZero: true,
-                    grid: { color: '#eee' },
+                    grid: {
+                        display: false
+                    },
                     ticks: {
-                        stepSize: 1,
-                        font: { size: 11 },
-                        callback: v => Number.isInteger(v) ? v : null
+                        font: {
+                            size: 12
+                        }
                     }
                 },
                 y: {
-                    grid: { display: false },
-                    ticks: { font: { size: 12 } }
+                    beginAtZero: true,
+                    grid: {
+                        color: '#eee'
+                    },
+                    ticks: {
+                        font: {
+                            size: 11
+                        },
+                        stepSize: 1,
+                        callback: v => Number.isInteger(v) ? v : null
+                    }
                 }
             }
         }
     });
-}
 
-// ===== 4. Gender Donut =====
-const genderCtxEl = document.getElementById('genderChart');
-if (genderCtxEl) {
-    const genderCtx = genderCtxEl.getContext('2d');
-    new Chart(genderCtx, {
-        type: 'doughnut',
-        data: {
-            labels: genderLabels,
-            datasets: [{
-                data: genderData,
-                backgroundColor: ['#c0392b','#d4a017','#2c3e7a'],
-                borderWidth: 3,
-                borderColor: '#fff',
-                hoverOffset: 6
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '60%',
-            plugins: {
-                legend: {
-                    position: 'bottom',
-                    labels: {
-                        padding: 16,
-                        font: { size: 12 },
-                        usePointStyle: true,
-                        pointStyleWidth: 10
+    // ===== 2. Place Horizontal Bar =====
+    const placeCtxEl = document.getElementById('placeChart');
+    if (placeCtxEl) {
+        const placeCtx = placeCtxEl.getContext('2d');
+        new Chart(placeCtx, {
+            type: 'bar',
+            data: {
+                labels: placeLabels,
+                datasets: [{
+                    data: placeData,
+                    backgroundColor: ['#d4a017', '#5b8de8', '#2c3e7a', '#c0796a', '#2d7a3a'],
+                    borderRadius: 5,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.parsed.x} ครั้ง`
+                        }
                     }
                 },
-                tooltip: {
-                    callbacks: {
-                        label: ctx => ` ${ctx.label}: ${ctx.parsed} คน`
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        grid: {
+                            color: '#eee'
+                        },
+                        ticks: {
+                            stepSize: 1,
+                            font: {
+                                size: 11
+                            },
+                            callback: v => Number.isInteger(v) ? v : null
+                        }
+                    },
+                    y: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            font: {
+                                size: 12
+                            }
+                        }
                     }
                 }
             }
-        }
-    });
-}
-
-// ===== Export Excel (SheetJS) =====
-function exportExcel() {
-    // โหลด SheetJS ถ้ายังไม่ได้โหลด
-    if (typeof XLSX === 'undefined') {
-        const s = document.createElement('script');
-        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
-        s.onload = doExportExcel;
-        document.head.appendChild(s);
-    } else {
-        doExportExcel();
+        });
     }
-}
 
-function doExportExcel() {
-    const wb = XLSX.utils.book_new();
+    // ===== 4. Gender Donut =====
+    // ===== 4. Gender Donut =====
+    const genderCtxEl = document.getElementById('genderChart');
+    if (genderCtxEl) {
+        const genderCtx = genderCtxEl.getContext('2d');
+        new Chart(genderCtx, {
+            type: 'doughnut',
+            data: {
+                labels: genderLabels,
+                datasets: [{
+                    data: genderData,
+                    backgroundColor: ['#c0392b', '#d4a017', '#2c3e7a'],
+                    borderWidth: genderData.map(v => v === 0 ? 0 : 3),
+                    borderColor: '#fff',
+                    hoverOffset: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 16,
+                            font: {
+                                size: 12
+                            },
+                            boxWidth: 12,
+                            boxHeight: 12,
+                        }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: ctx => ` ${ctx.label}: ${ctx.parsed} คน`
+                        }
+                    }
+                }
+            }
+        });
+    }
 
-    // ---- Sheet 1: ผู้เข้าชม 7 วัน ----
-    const visitorRows = [['วัน', 'จำนวนผู้เข้าชม (คน)']];
-    visitorLabels.forEach((d, i) => visitorRows.push([d, visitorData[i]]));
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(visitorRows), 'ผู้เข้าชม 7 วัน');
-
-    // ---- Sheet 2: Top 5 สถานที่ ----
-    const placeRows = [['สถานที่', 'จำนวนการเข้าชม (ครั้ง)']];
-    placeLabels.forEach((p, i) => placeRows.push([p, placeData[i]]));
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(placeRows), 'Top 5 สถานที่');
-
-    // ---- Sheet 3: ช่วงอายุ ----
-    const ageData  = <?= json_encode(array_map(function($r) use ($age_counts, $age_total) {
-        $cnt = $age_counts[$r];
-        $pct = ($age_total > 0) ? round($cnt / $age_total * 100) : 0;
-        return ['range' => $r, 'count' => $cnt, 'pct' => $pct];
-    }, $age_ranges), JSON_UNESCAPED_UNICODE) ?>;
-    const ageRows = [['ช่วงอายุ', 'จำนวน (คน)', 'เปอร์เซ็นต์']];
-    ageData.forEach(a => ageRows.push([a.range, a.count, a.pct + '%']));
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ageRows), 'ช่วงอายุ');
-
-    // ---- Sheet 4: เพศ ----
-    const genderRows = [['เพศ', 'จำนวน (คน)']];
-    genderLabels.forEach((g, i) => genderRows.push([g, genderData[i]]));
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(genderRows), 'เพศ');
-
-    // ---- Sheet 5: สรุป ----
-    const today = new Date().toLocaleDateString('th-TH');
-    const summaryRows = [
-        ['รายงานสรุปข้อมูล Dashboard'],
-        ['วันที่ออกรายงาน', today],
-        [],
-        ['หัวข้อ', 'จำนวน'],
-        ['จำนวนสถานที่ทั้งหมด', <?= (int)$place_count ?>],
-        ['จำนวนคอนเทนต์ทั้งหมด', <?= (int)$content_count ?>],
-        ['จำนวนผู้เข้าชมทั้งหมด', <?= (int)$total_visitor ?>],
-    ];
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryRows), 'สรุป');
-
-    const filename = 'dashboard_report_' + new Date().toISOString().slice(0,10) + '.xlsx';
-    XLSX.writeFile(wb, filename);
-}
-
-// ===== Export PDF (jsPDF + html2canvas) =====
-function exportPDF() {
-    // โหลด library ที่ต้องการ
-    const libs = [
-        { id: 'jspdf-lib',      src: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js' },
-        { id: 'html2canvas-lib', src: 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js' }
-    ];
-    let loaded = 0;
-    libs.forEach(lib => {
-        if (!document.getElementById(lib.id)) {
+    // ===== Export Excel (SheetJS) =====
+    function exportExcel() {
+        // โหลด SheetJS ถ้ายังไม่ได้โหลด
+        if (typeof XLSX === 'undefined') {
             const s = document.createElement('script');
-            s.id  = lib.id;
-            s.src = lib.src;
-            s.onload = () => { loaded++; if (loaded === libs.length) doExportPDF(); };
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+            s.onload = doExportExcel;
             document.head.appendChild(s);
         } else {
-            loaded++;
-            if (loaded === libs.length) doExportPDF();
+            doExportExcel();
         }
-    });
-}
+    }
 
-async function doExportPDF() {
-    const { jsPDF } = window.jspdf;
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    function doExportExcel() {
+        const wb = XLSX.utils.book_new();
 
-    // ฝัง font รองรับภาษาไทยผ่าน html2canvas (render เป็นภาพ)
-    const wrapper = document.querySelector('.dashboard-wrapper');
+        // ---- Sheet 1: ผู้เข้าชม 7 วัน ----
+        const visitorRows = [
+            ['วัน', 'จำนวนผู้เข้าชม (คน)']
+        ];
+        visitorLabels.forEach((d, i) => visitorRows.push([d, visitorData[i]]));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(visitorRows), 'ผู้เข้าชม 7 วัน');
 
-    // แสดง loading
-    const btn = document.querySelector('.btn-pdf');
-    const origText = btn.innerHTML;
-    btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> กำลังสร้าง PDF...';
-    btn.disabled = true;
+        // ---- Sheet 2: Top 5 สถานที่ ----
+        const placeRows = [
+            ['สถานที่', 'จำนวนการเข้าชม (ครั้ง)']
+        ];
+        placeLabels.forEach((p, i) => placeRows.push([p, placeData[i]]));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(placeRows), 'Top 5 สถานที่');
 
-    try {
-        const canvas = await html2canvas(wrapper, {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            backgroundColor: '#f0f2f0'
+        // ---- Sheet 3: ช่วงอายุ ----
+        const ageData = <?= json_encode(array_map(function ($r) use ($age_counts, $age_total) {
+                            $cnt = $age_counts[$r];
+                            $pct = ($age_total > 0) ? round($cnt / $age_total * 100) : 0;
+                            return ['range' => $r, 'count' => $cnt, 'pct' => $pct];
+                        }, $age_ranges), JSON_UNESCAPED_UNICODE) ?>;
+        const ageRows = [
+            ['ช่วงอายุ', 'จำนวน (คน)', 'เปอร์เซ็นต์']
+        ];
+        ageData.forEach(a => ageRows.push([a.range, a.count, a.pct + '%']));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(ageRows), 'ช่วงอายุ');
+
+        // ---- Sheet 4: เพศ ----
+        const genderRows = [
+            ['เพศ', 'จำนวน (คน)']
+        ];
+        genderLabels.forEach((g, i) => genderRows.push([g, genderData[i]]));
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(genderRows), 'เพศ');
+
+        // ---- Sheet 5: สรุป ----
+        const today = new Date().toLocaleDateString('th-TH');
+        const summaryRows = [
+            ['รายงานสรุปข้อมูล Dashboard'],
+            ['วันที่ออกรายงาน', today],
+            [],
+            ['หัวข้อ', 'จำนวน'],
+            ['จำนวนสถานที่ทั้งหมด', <?= (int)$place_count ?>],
+            ['จำนวนคอนเทนต์ทั้งหมด', <?= (int)$content_count ?>],
+            ['จำนวนผู้เข้าชมทั้งหมด', <?= (int)$total_visitor ?>],
+        ];
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(summaryRows), 'สรุป');
+
+        const filename = 'dashboard_report_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+        XLSX.writeFile(wb, filename);
+    }
+
+    // ===== Export PDF (jsPDF + html2canvas) =====
+    function exportPDF() {
+        // โหลด library ที่ต้องการ
+        const libs = [{
+                id: 'jspdf-lib',
+                src: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+            },
+            {
+                id: 'html2canvas-lib',
+                src: 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
+            }
+        ];
+        let loaded = 0;
+        libs.forEach(lib => {
+            if (!document.getElementById(lib.id)) {
+                const s = document.createElement('script');
+                s.id = lib.id;
+                s.src = lib.src;
+                s.onload = () => {
+                    loaded++;
+                    if (loaded === libs.length) doExportPDF();
+                };
+                document.head.appendChild(s);
+            } else {
+                loaded++;
+                if (loaded === libs.length) doExportPDF();
+            }
+        });
+    }
+
+    async function doExportPDF() {
+        const {
+            jsPDF
+        } = window.jspdf;
+        const pdf = new jsPDF({
+            orientation: 'portrait',
+            unit: 'mm',
+            format: 'a4'
         });
 
-        const imgData = canvas.toDataURL('image/png');
-        const pageW   = 210; // A4 width mm
-        const pageH   = 297; // A4 height mm
-        const margin  = 10;
-        const usableW = pageW - margin * 2;
-        const imgH    = (canvas.height / canvas.width) * usableW;
+        // ฝัง font รองรับภาษาไทยผ่าน html2canvas (render เป็นภาพ)
+        const wrapper = document.querySelector('.dashboard-wrapper');
 
-        // หัวกระดาษ
-        pdf.setFillColor(45, 122, 58);
-        pdf.rect(0, 0, pageW, 14, 'F');
-        pdf.setTextColor(255, 255, 255);
-        pdf.setFontSize(11);
-        pdf.text('รายงาน Dashboard', margin, 9.5);
-        const today = new Date().toLocaleDateString('th-TH', { year:'numeric', month:'long', day:'numeric' });
-        pdf.setFontSize(8);
-        pdf.text('วันที่: ' + today, pageW - margin, 9.5, { align: 'right' });
+        // แสดง loading
+        const btn = document.querySelector('.btn-pdf');
+        const origText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> กำลังสร้าง PDF...';
+        btn.disabled = true;
 
-        // วางภาพ (รองรับหลายหน้า)
-        let yPos    = 16;
-        let remaining = imgH;
-        let srcY    = 0;
+        try {
+            const canvas = await html2canvas(wrapper, {
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                backgroundColor: '#f0f2f0'
+            });
 
-        while (remaining > 0) {
-            const sliceH  = Math.min(remaining, pageH - yPos - margin);
-            const slicePx = (sliceH / usableW) * canvas.width;
+            const imgData = canvas.toDataURL('image/png');
+            const pageW = 210; // A4 width mm
+            const pageH = 297; // A4 height mm
+            const margin = 10;
+            const usableW = pageW - margin * 2;
+            const imgH = (canvas.height / canvas.width) * usableW;
 
-            // ตัดภาพ
-            const sliceCanvas = document.createElement('canvas');
-            sliceCanvas.width  = canvas.width;
-            sliceCanvas.height = slicePx;
-            const ctx = sliceCanvas.getContext('2d');
-            ctx.drawImage(canvas, 0, srcY, canvas.width, slicePx, 0, 0, canvas.width, slicePx);
+            // หัวกระดาษ
+            pdf.setFillColor(45, 122, 58);
+            pdf.rect(0, 0, pageW, 14, 'F');
+            pdf.setTextColor(255, 255, 255);
+            pdf.setFontSize(11);
+            pdf.text('รายงาน Dashboard', margin, 9.5);
+            const today = new Date().toLocaleDateString('th-TH', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            pdf.setFontSize(8);
+            pdf.text('วันที่: ' + today, pageW - margin, 9.5, {
+                align: 'right'
+            });
 
-            pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, yPos, usableW, sliceH);
+            // วางภาพ (รองรับหลายหน้า)
+            let yPos = 16;
+            let remaining = imgH;
+            let srcY = 0;
 
-            remaining -= sliceH;
-            srcY      += slicePx;
+            while (remaining > 0) {
+                const sliceH = Math.min(remaining, pageH - yPos - margin);
+                const slicePx = (sliceH / usableW) * canvas.width;
 
-            if (remaining > 0) {
-                pdf.addPage();
-                // หัวกระดาษหน้าถัดไป
-                pdf.setFillColor(45, 122, 58);
-                pdf.rect(0, 0, pageW, 14, 'F');
-                yPos = 16;
+                // ตัดภาพ
+                const sliceCanvas = document.createElement('canvas');
+                sliceCanvas.width = canvas.width;
+                sliceCanvas.height = slicePx;
+                const ctx = sliceCanvas.getContext('2d');
+                ctx.drawImage(canvas, 0, srcY, canvas.width, slicePx, 0, 0, canvas.width, slicePx);
+
+                pdf.addImage(sliceCanvas.toDataURL('image/png'), 'PNG', margin, yPos, usableW, sliceH);
+
+                remaining -= sliceH;
+                srcY += slicePx;
+
+                if (remaining > 0) {
+                    pdf.addPage();
+                    // หัวกระดาษหน้าถัดไป
+                    pdf.setFillColor(45, 122, 58);
+                    pdf.rect(0, 0, pageW, 14, 'F');
+                    yPos = 16;
+                }
             }
-        }
 
-        // เท้ากระดาษ
-        const totalPages = pdf.internal.getNumberOfPages();
-        for (let p = 1; p <= totalPages; p++) {
-            pdf.setPage(p);
-            pdf.setFillColor(240, 242, 240);
-            pdf.rect(0, pageH - 8, pageW, 8, 'F');
-            pdf.setTextColor(150, 150, 150);
-            pdf.setFontSize(7);
-            pdf.text('หน้า ' + p + ' / ' + totalPages, pageW / 2, pageH - 3, { align: 'center' });
-        }
+            // เท้ากระดาษ
+            const totalPages = pdf.internal.getNumberOfPages();
+            for (let p = 1; p <= totalPages; p++) {
+                pdf.setPage(p);
+                pdf.setFillColor(240, 242, 240);
+                pdf.rect(0, pageH - 8, pageW, 8, 'F');
+                pdf.setTextColor(150, 150, 150);
+                pdf.setFontSize(7);
+                pdf.text('หน้า ' + p + ' / ' + totalPages, pageW / 2, pageH - 3, {
+                    align: 'center'
+                });
+            }
 
-        const filename = 'dashboard_report_' + new Date().toISOString().slice(0,10) + '.pdf';
-        pdf.save(filename);
-    } catch (err) {
-        console.error(err);
-        alert('เกิดข้อผิดพลาดในการสร้าง PDF กรุณาลองใหม่อีกครั้ง');
-    } finally {
-        btn.innerHTML = origText;
-        btn.disabled  = false;
+            const filename = 'dashboard_report_' + new Date().toISOString().slice(0, 10) + '.pdf';
+            pdf.save(filename);
+        } catch (err) {
+            console.error(err);
+            alert('เกิดข้อผิดพลาดในการสร้าง PDF กรุณาลองใหม่อีกครั้ง');
+        } finally {
+            btn.innerHTML = origText;
+            btn.disabled = false;
+        }
     }
-}
 </script>
