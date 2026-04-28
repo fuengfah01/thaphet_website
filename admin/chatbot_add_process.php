@@ -4,28 +4,40 @@ include '../config.php';
 
 $type = $_POST['type'] ?? '';
 
-// ── Helper: upload image ──────────────────────────────────────────
-function uploadImage($fieldName, $uploadDir = '../assets/image/')
+// ── Helper: upload image to Cloudinary ───────────────────────────
+function uploadImage($fieldName)
 {
     if (empty($_FILES[$fieldName]['name'])) return null;
 
-    $file     = $_FILES[$fieldName];
-    $allowed  = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-    $maxSize  = 5 * 1024 * 1024; // 5 MB
+    $file    = $_FILES[$fieldName];
+    $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    $maxSize = 5 * 1024 * 1024;
 
     if (!in_array($file['type'], $allowed)) return null;
     if ($file['size'] > $maxSize) return null;
 
-    if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+    $cloud_name = 'dtqdc6au1';
+    $api_key    = '848722437152954';
+    $api_secret = '3XUWck6U1OYO2Yx_X8HXfHClarg';
+    $timestamp  = time();
+    $signature  = sha1("timestamp={$timestamp}{$api_secret}");
 
-    $ext      = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = uniqid('img_') . '.' . strtolower($ext);
-    $dest     = $uploadDir . $filename;
+    $ch = curl_init("https://api.cloudinary.com/v1_1/{$cloud_name}/image/upload");
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => [
+            'file'      => new CURLFile($file['tmp_name'], $file['type'], $file['name']),
+            'api_key'   => $api_key,
+            'timestamp' => $timestamp,
+            'signature' => $signature,
+        ],
+    ]);
+    $response = curl_exec($ch);
+    curl_close($ch);
 
-    if (move_uploaded_file($file['tmp_name'], $dest)) {
-        return 'assets/image/' . $filename;
-    }
-    return null;
+    $data = json_decode($response, true);
+    return $data['secure_url'] ?? null;
 }
 
 // ── Helper: safe string ───────────────────────────────────────────
@@ -39,7 +51,7 @@ $msg      = '';
 $msg_type = 'success';
 
 /* ════════════════════════════════════════════════════════
-   INSERT PLACE → chatbot_place (แยกจากตาราง place ของเว็บ)
+   INSERT PLACE → chatbot_place
 ════════════════════════════════════════════════════════ */
 if ($type === 'place') {
     $name    = esc($conn, $_POST['place_name'] ?? '');
@@ -51,8 +63,8 @@ if ($type === 'place') {
     $map_url = esc($conn, $_POST['map_url'] ?? '');
     $img     = uploadImage('cover_image');
 
-    $imgVal  = $img ? "'$img'" : 'NULL';
-    $mapVal  = $map_url ? "'$map_url'" : 'NULL';
+    $imgVal = $img     ? "'" . mysqli_real_escape_string($conn, $img) . "'" : 'NULL';
+    $mapVal = $map_url ? "'$map_url'" : 'NULL';
 
     $sql = "INSERT INTO chatbot_place
               (place_name, place_description, highlight, category, open_time, close_time, map_url, cover_image)
@@ -70,7 +82,8 @@ if ($type === 'place') {
 
 /* ════════════════════════════════════════════════════════
    INSERT RESTAURANT
-════════════════════════════════════════════════════════ */ elseif ($type === 'restaurant') {
+════════════════════════════════════════════════════════ */
+elseif ($type === 'restaurant') {
     $name    = esc($conn, $_POST['name'] ?? '');
     $cat     = esc($conn, $_POST['category'] ?? '');
     $hi      = esc($conn, $_POST['highlight'] ?? '');
@@ -80,14 +93,14 @@ if ($type === 'place') {
     $map_url = esc($conn, $_POST['map_url'] ?? '');
     $img     = uploadImage('cover_image');
 
-    $imgVal  = $img     ? "'$img'"     : 'NULL';
-    $phVal   = $phone   ? "'$phone'"   : 'NULL';
-    $mapVal  = $map_url ? "'$map_url'" : 'NULL';
+    $imgVal = $img     ? "'" . mysqli_real_escape_string($conn, $img) . "'" : 'NULL';
+    $phVal  = $phone   ? "'$phone'"   : 'NULL';
+    $mapVal = $map_url ? "'$map_url'" : 'NULL';
 
     $sql = "INSERT INTO restaurant
-          (name, category, highlight, open_hours, close_hours, map_url, cover_image, image_credit)
-        VALUES
-          ('$name','$cat','$hi','$open','$cls',$mapVal,$imgVal,NULL)";
+              (name, category, highlight, open_hours, close_hours, map_url, cover_image, image_credit)
+            VALUES
+              ('$name','$cat','$hi','$open','$cls',$mapVal,$imgVal,NULL)";
 
     if (mysqli_query($conn, $sql)) {
         $msg      = 'เพิ่มร้านอาหารเรียบร้อย';
@@ -100,19 +113,28 @@ if ($type === 'place') {
 
 /* ════════════════════════════════════════════════════════
    INSERT ACTIVITY
-════════════════════════════════════════════════════════ */ 
+════════════════════════════════════════════════════════ */
 elseif ($type === 'activity') {
     $name     = esc($conn, $_POST['name'] ?? '');
-    $act_type = esc($conn, $_POST['act_type'] ?? '');  // เปลี่ยนตรงนี้
+    $act_type = esc($conn, $_POST['act_type'] ?? '');
     $desc     = esc($conn, $_POST['description'] ?? '');
 
     $sql = "INSERT INTO activity (name, type, description)
             VALUES ('$name','$act_type','$desc')";
+
+    if (mysqli_query($conn, $sql)) {
+        $msg      = 'เพิ่มกิจกรรมเรียบร้อย';
+        $redirect = 'chatbot_manage.php?tab=activity';
+    } else {
+        $msg      = 'เกิดข้อผิดพลาด: ' . mysqli_error($conn);
+        $msg_type = 'danger';
+    }
 }
 
 /* ════════════════════════════════════════════════════════
    INSERT SOUVENIR SHOP
-════════════════════════════════════════════════════════ */ elseif ($type === 'souvenir') {
+════════════════════════════════════════════════════════ */
+elseif ($type === 'souvenir') {
     $name    = esc($conn, $_POST['name'] ?? '');
     $desc    = esc($conn, $_POST['description'] ?? '');
     $phone   = esc($conn, $_POST['phone'] ?? '');
@@ -121,9 +143,9 @@ elseif ($type === 'activity') {
     $map_url = esc($conn, $_POST['map_url'] ?? '');
     $img     = uploadImage('cover_image');
 
-    $imgVal  = $img     ? "'$img'"     : 'NULL';
-    $phVal   = $phone   ? "'$phone'"   : 'NULL';
-    $mapVal  = $map_url ? "'$map_url'" : 'NULL';
+    $imgVal = $img     ? "'" . mysqli_real_escape_string($conn, $img) . "'" : 'NULL';
+    $phVal  = $phone   ? "'$phone'"   : 'NULL';
+    $mapVal = $map_url ? "'$map_url'" : 'NULL';
 
     $sql = "INSERT INTO souvenir_shop
               (name, description, phone, open_hours, close_hours, map_url, cover_image, image_credit)
