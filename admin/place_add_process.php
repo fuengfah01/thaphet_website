@@ -2,33 +2,6 @@
 include '../config.php';
 include 'check_login.php';
 
-// ===== Cloudinary Config =====
-$cloud_name = "dtqdc6au1";
-$api_key    = "848722437152954";
-$api_secret = "3XUWck6U1OYO2Yx_X8HXfHClarg";
-
-function uploadToCloudinary($tmp_file, $cloud_name, $api_key, $api_secret) {
-    $timestamp = time();
-    $params = "timestamp=" . $timestamp . $api_secret;
-    $signature = sha1($params);
-
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, "https://api.cloudinary.com/v1_1/{$cloud_name}/image/upload");
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, [
-        'file'      => new CURLFile($tmp_file),
-        'api_key'   => $api_key,
-        'timestamp' => $timestamp,
-        'signature' => $signature,
-    ]);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    $response = curl_exec($ch);
-    curl_close($ch);
-
-    $data = json_decode($response, true);
-    return $data['secure_url'] ?? null;
-}
-
 // ===== รับค่าจากฟอร์ม =====
 $place_name        = $_POST['place_name'] ?? '';
 $place_description = $_POST['place_description'] ?? '';
@@ -56,8 +29,7 @@ $place_id = mysqli_insert_id($conn);
 if (!empty($_FILES['place_images']['name'][0])) {
     foreach ($_FILES['place_images']['tmp_name'] as $key => $tmp_name) {
         if ($_FILES['place_images']['error'][$key] !== UPLOAD_ERR_OK) continue;
-
-        $url = uploadToCloudinary($tmp_name, $cloud_name, $api_key, $api_secret);
+        $url = uploadToCloudinary($tmp_name, $_FILES['place_images']['name'][$key]);
         if ($url) {
             $sql_img = "INSERT INTO place_image (place_id, image_path) VALUES (?, ?)";
             $stmt_img = mysqli_prepare($conn, $sql_img);
@@ -69,7 +41,7 @@ if (!empty($_FILES['place_images']['name'][0])) {
 
 // ===== UPLOAD QR Code via Cloudinary =====
 if (!empty($_FILES['model_3d']['name']) && $_FILES['model_3d']['error'] === UPLOAD_ERR_OK) {
-    $url = uploadToCloudinary($_FILES['model_3d']['tmp_name'], $cloud_name, $api_key, $api_secret);
+    $url = uploadToCloudinary($_FILES['model_3d']['tmp_name'], $_FILES['model_3d']['name']);
     if ($url) {
         $sql_model = "INSERT INTO model_3d (model_3d, place_id) VALUES (?, ?)";
         $stmt_model = mysqli_prepare($conn, $sql_model);
