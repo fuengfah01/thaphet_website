@@ -113,7 +113,6 @@
                             <a href="/place_detail.php?id=<?= $row['place_id'] ?>">
                                 <button class="btn-primary small">View</button>
                             </a>
-
                         </div>
                     </div>
 
