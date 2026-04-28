@@ -13,7 +13,7 @@ $age_range = $_POST['age_range'] ?? '';
 
 // ===== Validate =====
 $allowed_gender = ['male', 'female', 'unspecified'];
-$allowed_age    = ['12-20', '21-30', '31-42', '43-52', '53-60', '60+'];
+$allowed_age    = ['15-25', '26-35', '36-45', '46-55', '56-65', '65+'];
 
 if (!in_array($gender, $allowed_gender) || !in_array($age_range, $allowed_age)) {
     header("Location: survey.php");
