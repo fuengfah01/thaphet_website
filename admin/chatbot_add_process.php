@@ -40,7 +40,6 @@ function uploadImage($fieldName)
     return $data['secure_url'] ?? null;
 }
 
-// ── Helper: safe string ───────────────────────────────────────────
 function esc($conn, $val)
 {
     return mysqli_real_escape_string($conn, trim($val));
@@ -50,9 +49,7 @@ $redirect = 'chatbot_manage.php';
 $msg      = '';
 $msg_type = 'success';
 
-/* ════════════════════════════════════════════════════════
-   INSERT PLACE → chatbot_place
-════════════════════════════════════════════════════════ */
+/* ════ INSERT PLACE ════ */
 if ($type === 'place') {
     $name    = esc($conn, $_POST['place_name'] ?? '');
     $desc    = esc($conn, $_POST['place_description'] ?? '');
@@ -80,9 +77,7 @@ if ($type === 'place') {
     }
 }
 
-/* ════════════════════════════════════════════════════════
-   INSERT RESTAURANT
-════════════════════════════════════════════════════════ */
+/* ════ INSERT RESTAURANT ════ */
 elseif ($type === 'restaurant') {
     $name    = esc($conn, $_POST['name'] ?? '');
     $cat     = esc($conn, $_POST['category'] ?? '');
@@ -97,10 +92,11 @@ elseif ($type === 'restaurant') {
     $phVal  = $phone   ? "'$phone'"   : 'NULL';
     $mapVal = $map_url ? "'$map_url'" : 'NULL';
 
+    // ✅ เพิ่ม phone ใน INSERT
     $sql = "INSERT INTO restaurant
-              (name, category, highlight, open_hours, close_hours, map_url, cover_image, image_credit)
+              (name, category, highlight, phone, open_hours, close_hours, map_url, cover_image, image_credit)
             VALUES
-              ('$name','$cat','$hi','$open','$cls',$mapVal,$imgVal,NULL)";
+              ('$name','$cat','$hi',$phVal,'$open','$cls',$mapVal,$imgVal,NULL)";
 
     if (mysqli_query($conn, $sql)) {
         $msg      = 'เพิ่มร้านอาหารเรียบร้อย';
@@ -111,9 +107,7 @@ elseif ($type === 'restaurant') {
     }
 }
 
-/* ════════════════════════════════════════════════════════
-   INSERT ACTIVITY
-════════════════════════════════════════════════════════ */
+/* ════ INSERT ACTIVITY ════ */
 elseif ($type === 'activity') {
     $name     = esc($conn, $_POST['name'] ?? '');
     $act_type = esc($conn, $_POST['act_type'] ?? '');
@@ -131,9 +125,7 @@ elseif ($type === 'activity') {
     }
 }
 
-/* ════════════════════════════════════════════════════════
-   INSERT SOUVENIR SHOP
-════════════════════════════════════════════════════════ */
+/* ════ INSERT SOUVENIR ════ */
 elseif ($type === 'souvenir') {
     $name    = esc($conn, $_POST['name'] ?? '');
     $desc    = esc($conn, $_POST['description'] ?? '');
@@ -164,13 +156,8 @@ elseif ($type === 'souvenir') {
     $msg_type = 'danger';
 }
 
-session_start_if_not_started();
+if (session_status() === PHP_SESSION_NONE) session_start();
 $_SESSION['flash_msg']  = $msg;
 $_SESSION['flash_type'] = $msg_type;
 header('Location: ' . $redirect);
 exit;
-
-function session_start_if_not_started()
-{
-    if (session_status() === PHP_SESSION_NONE) session_start();
-}
