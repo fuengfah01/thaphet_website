@@ -11,7 +11,7 @@ if (isset($_SESSION['survey_done'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ก่อนเข้าชมเว็บไซต์</title>
+    <title>ยินดีต้อนรับเข้าสู่เว็บไซต์ท่องเที่ยวในอำเภอท่ายาง</title>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&family=Mitr:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
