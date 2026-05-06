@@ -1,8 +1,8 @@
 <?php
-$host = "sql7.freesqldatabase.com";
-$user = "sql7824635";
-$pass = "iUz24J2d6E";
-$db   = "sql7824635";
+$host = "sql12.freesqldatabase.com";
+$user = "sql12825543";
+$pass = "BiDtrBXwmJ";
+$db   = "sql12825543";
 $port = 3306;
 $conn = mysqli_connect($host, $user, $pass, $db, $port);
 if (!$conn) {
