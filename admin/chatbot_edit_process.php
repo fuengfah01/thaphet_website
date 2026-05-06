@@ -108,12 +108,12 @@ elseif ($type === 'restaurant') {
     else { $msg = 'เกิดข้อผิดพลาด: ' . mysqli_error($conn); $msg_type = 'danger'; $redirect = 'chatbot_manage.php?tab=restaurant'; }
 }
 
-// UPDATE ACTIVITY ✅ แก้: รับ act_type จาก select name="act_type" ใน modal
+// UPDATE ACTIVITY
 elseif ($type === 'activity') {
     $name     = esc($conn, $_POST['name'] ?? '');
-    $act_type = esc($conn, $_POST['act_type'] ?? ''); // ✅ เปลี่ยนจาก $_POST['type']
+    $act_type = esc($conn, $_POST['act_type'] ?? '');
     $desc     = esc($conn, $_POST['description'] ?? '');
-    $newImg   = uploadImage('image_url');
+    $newImg   = uploadImage('image_file'); // ✅ แก้: ตรงกับ name="image_file" ในฟอร์ม
     $imgSet   = $newImg ? ", image_url = '" . mysqli_real_escape_string($conn, $newImg) . "'" : '';
     $sql = "UPDATE activity SET name='$name', type='$act_type', description='$desc' $imgSet WHERE activity_id=$id";
     if (mysqli_query($conn, $sql)) { $msg = 'แก้ไขกิจกรรมเรียบร้อย'; $redirect = 'chatbot_manage.php?tab=activity'; }
