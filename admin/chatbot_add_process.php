@@ -92,7 +92,6 @@ elseif ($type === 'restaurant') {
     $phVal  = $phone   ? "'$phone'"   : 'NULL';
     $mapVal = $map_url ? "'$map_url'" : 'NULL';
 
-    // ✅ เพิ่ม phone ใน INSERT
     $sql = "INSERT INTO restaurant
               (name, category, highlight, phone, open_hours, close_hours, map_url, cover_image, image_credit)
             VALUES
@@ -110,11 +109,15 @@ elseif ($type === 'restaurant') {
 /* ════ INSERT ACTIVITY ════ */
 elseif ($type === 'activity') {
     $name     = esc($conn, $_POST['name'] ?? '');
-    $act_type = esc($conn, $_POST['act_type'] ?? '');
+    // ✅ แก้ไข: เปลี่ยนจาก $_POST['act_type'] เป็น $_POST['type'] ให้ตรงกับ form
+    $act_type = esc($conn, $_POST['type'] ?? '');
     $desc     = esc($conn, $_POST['description'] ?? '');
+    // ✅ แก้ไข: เพิ่มการอัปโหลดรูปภาพ
+    $img      = uploadImage('image_url');
+    $imgVal   = $img ? "'" . mysqli_real_escape_string($conn, $img) . "'" : 'NULL';
 
-    $sql = "INSERT INTO activity (name, type, description)
-            VALUES ('$name','$act_type','$desc')";
+    $sql = "INSERT INTO activity (name, type, description, image_url)
+            VALUES ('$name','$act_type','$desc',$imgVal)";
 
     if (mysqli_query($conn, $sql)) {
         $msg      = 'เพิ่มกิจกรรมเรียบร้อย';
