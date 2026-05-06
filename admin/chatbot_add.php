@@ -92,7 +92,6 @@ $type_meta = [
     .type-grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        /* เปลี่ยนจาก 4 → 3 */
         gap: 18px;
         max-width: 820px;
         margin: 0 auto;
@@ -693,7 +692,7 @@ $type_meta = [
                                     </div>
                                     <div class="form-group">
                                         <label class="form-label">ประเภทกิจกรรม <span class="req">*</span></label>
-                                        <select name="act_type" class="form-control" required> <!-- เปลี่ยนตรงนี้ -->
+                                        <select name="act_type" class="form-control" required>
                                             <option value="">-- เลือกประเภท --</option>
                                             <option value="ไหว้พระ">🙏 ไหว้พระ</option>
                                             <option value="ถ่ายรูป">📷 ถ่ายรูป</option>
@@ -706,6 +705,17 @@ $type_meta = [
                                     <label class="form-label">สถานที่ที่เกี่ยวข้อง <span class="hint">(คั่นด้วย ,)</span></label>
                                     <textarea name="description" class="form-control" rows="3" placeholder="เช่น วัดท่าคอย, ศาลเจ้าพ่อกวนอู"></textarea>
                                 </div>
+                            </div>
+                            <!-- ✅ เพิ่ม section รูปภาพสำหรับ activity -->
+                            <div class="form-section">
+                                <?php secDiv('fa-image', 'รูปภาพหลัก', $divStyle); ?>
+                                <div class="upload-area" id="box1">
+                                    <input type="file" name="cover_image" accept="image/*" onchange="previewImg(this,'prev1','box1')">
+                                    <div class="upload-icon" style="background:<?= $ic['bg'] ?>;color:<?= $ic['cl'] ?>;"><i class="fa fa-cloud-arrow-up"></i></div>
+                                    <div class="upload-title">ลากไฟล์มาวาง หรือคลิกเพื่อเลือก</div>
+                                    <div class="upload-sub">JPG, PNG, WEBP — <strong>ไม่เกิน 5MB</strong></div>
+                                </div>
+                                <img id="prev1" class="img-preview" alt="preview">
                             </div>
 
                         <?php elseif ($type === 'souvenir'): ?>
