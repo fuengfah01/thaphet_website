@@ -108,12 +108,14 @@ elseif ($type === 'restaurant') {
     else { $msg = 'เกิดข้อผิดพลาด: ' . mysqli_error($conn); $msg_type = 'danger'; $redirect = 'chatbot_manage.php?tab=restaurant'; }
 }
 
-// UPDATE ACTIVITY ✅ แก้ไข: รับ $_POST['type'] แทน $_POST['act_type']
+// UPDATE ACTIVITY ✅ แก้ไข: รับ $_POST['type'] และรองรับอัปโหลดรูป image_url
 elseif ($type === 'activity') {
     $name     = esc($conn, $_POST['name'] ?? '');
-    $act_type = esc($conn, $_POST['type'] ?? '');  // ✅ ตรงกับ name="type" ใน form
+    $act_type = esc($conn, $_POST['type'] ?? '');
     $desc     = esc($conn, $_POST['description'] ?? '');
-    $sql = "UPDATE activity SET name='$name', type='$act_type', description='$desc' WHERE activity_id=$id";
+    $newImg   = uploadImage('image_url');
+    $imgSet   = $newImg ? ", image_url = '" . mysqli_real_escape_string($conn, $newImg) . "'" : '';
+    $sql = "UPDATE activity SET name='$name', type='$act_type', description='$desc' $imgSet WHERE activity_id=$id";
     if (mysqli_query($conn, $sql)) { $msg = 'แก้ไขกิจกรรมเรียบร้อย'; $redirect = 'chatbot_manage.php?tab=activity'; }
     else { $msg = 'เกิดข้อผิดพลาด: ' . mysqli_error($conn); $msg_type = 'danger'; $redirect = 'chatbot_manage.php?tab=activity'; }
 }
