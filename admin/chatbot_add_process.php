@@ -4,17 +4,31 @@ include '../config.php';
 
 $type = $_POST['type'] ?? '';
 
-// ── Helper: upload image to Cloudinary ───────────────────────────
 function uploadImage($fieldName)
 {
-    if (empty($_FILES[$fieldName]['name'])) return null;
+    if (empty($_FILES[$fieldName]['name'])) {
+        error_log("[uploadImage] No file in field: $fieldName");
+        return null;
+    }
 
     $file    = $_FILES[$fieldName];
     $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
     $maxSize = 5 * 1024 * 1024;
 
-    if (!in_array($file['type'], $allowed)) return null;
-    if ($file['size'] > $maxSize) return null;
+    error_log("[uploadImage] field=$fieldName name={$file['name']} type={$file['type']} size={$file['size']} error={$file['error']}");
+
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        error_log("[uploadImage] Upload error code: {$file['error']}");
+        return null;
+    }
+    if (!in_array($file['type'], $allowed)) {
+        error_log("[uploadImage] File type not allowed: {$file['type']}");
+        return null;
+    }
+    if ($file['size'] > $maxSize) {
+        error_log("[uploadImage] File too large: {$file['size']}");
+        return null;
+    }
 
     $cloud_name = 'dtqdc6au1';
     $api_key    = '848722437152954';
@@ -34,10 +48,16 @@ function uploadImage($fieldName)
         ],
     ]);
     $response = curl_exec($ch);
+    $curl_err  = curl_error($ch);
+    $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
 
+    error_log("[uploadImage] Cloudinary HTTP=$http_code curl_err=$curl_err response=$response");
+
     $data = json_decode($response, true);
-    return $data['secure_url'] ?? null;
+    $url  = $data['secure_url'] ?? null;
+    error_log("[uploadImage] secure_url=" . ($url ?? 'NULL'));
+    return $url;
 }
 
 function esc($conn, $val)
@@ -109,13 +129,17 @@ elseif ($type === 'restaurant') {
 /* ════ INSERT ACTIVITY ════ */
 elseif ($type === 'activity') {
     $name     = esc($conn, $_POST['name'] ?? '');
-    $act_type = esc($conn, $_POST['act_type'] ?? '');   // ✅ แก้: ใช้ act_type ไม่ใช่ type
+    $act_type = esc($conn, $_POST['act_type'] ?? '');
     $desc     = esc($conn, $_POST['description'] ?? '');
-    $img      = uploadImage('cover_image');              // ✅ แก้: ใช้ cover_image ให้ตรงกับ form
+    $img      = uploadImage('cover_image');
     $imgVal   = $img ? "'" . mysqli_real_escape_string($conn, $img) . "'" : 'NULL';
+
+    error_log("[activity] name=$name act_type=$act_type img=" . ($img ?? 'NULL'));
 
     $sql = "INSERT INTO activity (name, type, description, image_url)
             VALUES ('$name','$act_type','$desc',$imgVal)";
+
+    error_log("[activity] SQL=$sql");
 
     if (mysqli_query($conn, $sql)) {
         $msg      = 'เพิ่มกิจกรรมเรียบร้อย';
@@ -123,6 +147,7 @@ elseif ($type === 'activity') {
     } else {
         $msg      = 'เกิดข้อผิดพลาด: ' . mysqli_error($conn);
         $msg_type = 'danger';
+        error_log("[activity] DB error: " . mysqli_error($conn));
     }
 }
 
