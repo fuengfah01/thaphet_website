@@ -61,7 +61,7 @@ function fmtTime($t)
     justify-self: center;
     font-size: 20px;
     font-weight: 700;
-    color:  #057C42;  /* เปลี่ยนจาก #1a1a1a →  #057C42 */
+    color:  #057C42;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -1292,7 +1292,8 @@ function fmtTime($t)
                                         <i class="fa fa-pen" style="font-size:10px;"></i> แก้ไข
                                     </button>
                                     <form method="post" action="chatbot_edit_process.php" onsubmit="return confirm('ลบกิจกรรมนี้?')">
-                                        <input type="hidden" name="record_type" value="activity">
+                                        <!-- ✅ แก้ไข: เปลี่ยนจาก name="record_type" เป็น name="type" -->
+                                        <input type="hidden" name="type" value="activity">
                                         <input type="hidden" name="id" value="<?= $row['activity_id'] ?>">
                                         <input type="hidden" name="_delete" value="1">
                                         <button type="submit" class="btn-del"><i class="fa fa-trash" style="font-size:10px;"></i> ลบ</button>
@@ -1319,8 +1320,8 @@ function fmtTime($t)
                     <button class="modal-close" onclick="closeModal('actModal')"><i class="fa fa-xmark"></i></button>
                 </div>
                 <form method="post" action="chatbot_edit_process.php" style="display:contents;">
-                    <input type="hidden" name="record_type" value="activity">
-                    <input type="hidden" name="type" value="about">
+                    <!-- ✅ แก้ไข: ลบ name="record_type" ออก และแก้ name="type" ให้ถูกต้องเป็น activity -->
+                    <input type="hidden" name="type" value="activity">
                     <input type="hidden" name="id" id="a_id">
                     <div class="modal-body">
                         <div class="form-group">
@@ -1329,7 +1330,8 @@ function fmtTime($t)
                         </div>
                         <div class="form-group">
                             <label class="form-label">ประเภทกิจกรรม <span class="req">*</span></label>
-                            <select name="act_type" id="a_type" class="form-control" required>
+                            <!-- ✅ แก้ไข: เปลี่ยน name="act_type" เป็น name="type" ให้ตรงกับ column ในฐานข้อมูล -->
+                            <select name="type" id="a_type" class="form-control" required>
                                 <option value="">-- เลือกประเภท --</option>
                                 <option value="ไหว้พระ">🙏 ไหว้พระ</option>
                                 <option value="ถ่ายรูป">📷 ถ่ายรูป</option>
