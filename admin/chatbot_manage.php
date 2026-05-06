@@ -1267,6 +1267,7 @@ function fmtTime($t)
             <table class="cb-table">
                 <thead>
                     <tr>
+                        <th style="width:70px;">รูป</th>
                         <th>ชื่อกิจกรรม</th>
                         <th>ประเภท</th>
                         <th>สถานที่ที่เกี่ยวข้อง</th>
@@ -1279,8 +1280,17 @@ function fmtTime($t)
                     $has = false;
                     while ($row = mysqli_fetch_assoc($activities)):
                         $has = true;
+                        $src = imgSrc($row['image_url'] ?? '');
                     ?>
                         <tr>
+                            <td>
+                                <?php if ($src): ?>
+                                    <img src="<?= $src ?>" class="cover-img" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+                                    <div class="cover-img-placeholder" style="display:none;"><i class="fa fa-image"></i></div>
+                                <?php else: ?>
+                                    <div class="cover-img-placeholder"><i class="fa fa-image"></i></div>
+                                <?php endif; ?>
+                            </td>
                             <td style="font-weight:700;"><?= htmlspecialchars($row['name']) ?></td>
                             <td><span class="badge badge-activity"><?= htmlspecialchars($row['type']) ?></span></td>
                             <td>
@@ -1292,7 +1302,6 @@ function fmtTime($t)
                                         <i class="fa fa-pen" style="font-size:10px;"></i> แก้ไข
                                     </button>
                                     <form method="post" action="chatbot_edit_process.php" onsubmit="return confirm('ลบกิจกรรมนี้?')">
-                                        <!-- ✅ แก้ไข: เปลี่ยนจาก name="record_type" เป็น name="type" -->
                                         <input type="hidden" name="type" value="activity">
                                         <input type="hidden" name="id" value="<?= $row['activity_id'] ?>">
                                         <input type="hidden" name="_delete" value="1">
@@ -1304,7 +1313,7 @@ function fmtTime($t)
                     <?php endwhile; ?>
                     <?php if (!$has): ?>
                         <tr class="empty-row">
-                            <td colspan="4"><i class="fa fa-inbox" style="font-size:24px;display:block;margin-bottom:6px;"></i>ยังไม่มีข้อมูล</td>
+                            <td colspan="5"><i class="fa fa-inbox" style="font-size:24px;display:block;margin-bottom:6px;"></i>ยังไม่มีข้อมูล</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
@@ -1319,8 +1328,7 @@ function fmtTime($t)
                     <span>แก้ไขกิจกรรม</span>
                     <button class="modal-close" onclick="closeModal('actModal')"><i class="fa fa-xmark"></i></button>
                 </div>
-                <form method="post" action="chatbot_edit_process.php" style="display:contents;">
-                    <!-- ✅ แก้ไข: ลบ name="record_type" ออก และแก้ name="type" ให้ถูกต้องเป็น activity -->
+                <form method="post" action="chatbot_edit_process.php" enctype="multipart/form-data" style="display:contents;">
                     <input type="hidden" name="type" value="activity">
                     <input type="hidden" name="id" id="a_id">
                     <div class="modal-body">
@@ -1330,7 +1338,6 @@ function fmtTime($t)
                         </div>
                         <div class="form-group">
                             <label class="form-label">ประเภทกิจกรรม <span class="req">*</span></label>
-                            <!-- ✅ แก้ไข: เปลี่ยน name="act_type" เป็น name="type" ให้ตรงกับ column ในฐานข้อมูล -->
                             <select name="type" id="a_type" class="form-control" required>
                                 <option value="">-- เลือกประเภท --</option>
                                 <option value="ไหว้พระ">🙏 ไหว้พระ</option>
@@ -1342,6 +1349,27 @@ function fmtTime($t)
                         <div class="form-group">
                             <label class="form-label">สถานที่ที่เกี่ยวข้อง <span style="font-weight:400;color:#bbb;font-size:11px;">(คั่นด้วย ,)</span></label>
                             <textarea name="description" id="a_desc" class="form-control" rows="3" placeholder="เช่น วัดท่าคอย, ศาลเจ้าพ่อกวนอู"></textarea>
+                        </div>
+                        <div class="sec-label">รูปภาพกิจกรรม</div>
+                        <div class="current-img-row" id="a_cur_img_row" style="display:none;">
+                            <img id="a_cur_img" src="" class="current-img-thumb" alt="">
+                            <div class="current-img-info">รูปปัจจุบัน<br><span style="color:#aaa;">อัปโหลดรูปใหม่เพื่อเปลี่ยน</span></div>
+                        </div>
+                        <div class="form-group">
+                            <div class="upload-area" id="a_upload_box">
+                                <input type="file" name="image_url" accept="image/*"
+                                    onchange="previewModalImg(this,'a_img_preview','a_img_preview_wrap','a_upload_box')">
+                                <span class="upload-icon"><i class="fa fa-image"></i></span>
+                                <div class="upload-title">คลิกเพื่ออัปโหลดรูปภาพ</div>
+                                <div class="upload-sub">PNG, JPG หรือ WEBP (สูงสุด 5MB)</div>
+                            </div>
+                            <div class="img-preview-wrap" id="a_img_preview_wrap">
+                                <img id="a_img_preview" alt="preview">
+                                <button type="button" class="remove-img"
+                                    onclick="removeModalImg('a_img_preview_wrap','a_upload_box','a_img_preview')">
+                                    <i class="fa fa-xmark"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-foot">
@@ -1713,6 +1741,8 @@ function fmtTime($t)
         document.getElementById('a_name').value = row.name || '';
         document.getElementById('a_type').value = row.type || '';
         document.getElementById('a_desc').value = row.description || '';
+        showCurrentImg('a_cur_img_row', 'a_cur_img', row.image_url);
+        resetUpload('a_img_preview_wrap', 'a_upload_box', 'a_img_preview');
         openModal('actModal');
     }
 
