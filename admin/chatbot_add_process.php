@@ -109,11 +109,9 @@ elseif ($type === 'restaurant') {
 /* ════ INSERT ACTIVITY ════ */
 elseif ($type === 'activity') {
     $name     = esc($conn, $_POST['name'] ?? '');
-    // ✅ แก้ไข: เปลี่ยนจาก $_POST['act_type'] เป็น $_POST['type'] ให้ตรงกับ form
-    $act_type = esc($conn, $_POST['type'] ?? '');
+    $act_type = esc($conn, $_POST['act_type'] ?? '');   // ✅ แก้: ใช้ act_type ไม่ใช่ type
     $desc     = esc($conn, $_POST['description'] ?? '');
-    // ✅ แก้ไข: เพิ่มการอัปโหลดรูปภาพ
-    $img      = uploadImage('image_url');
+    $img      = uploadImage('cover_image');              // ✅ แก้: ใช้ cover_image ให้ตรงกับ form
     $imgVal   = $img ? "'" . mysqli_real_escape_string($conn, $img) . "'" : 'NULL';
 
     $sql = "INSERT INTO activity (name, type, description, image_url)
