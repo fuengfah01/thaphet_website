@@ -108,10 +108,10 @@ elseif ($type === 'restaurant') {
     else { $msg = 'เกิดข้อผิดพลาด: ' . mysqli_error($conn); $msg_type = 'danger'; $redirect = 'chatbot_manage.php?tab=restaurant'; }
 }
 
-// UPDATE ACTIVITY ✅ แก้ไข: รับ $_POST['type'] และรองรับอัปโหลดรูป image_url
+// UPDATE ACTIVITY ✅ แก้: รับ act_type จาก select name="act_type" ใน modal
 elseif ($type === 'activity') {
     $name     = esc($conn, $_POST['name'] ?? '');
-    $act_type = esc($conn, $_POST['type'] ?? '');
+    $act_type = esc($conn, $_POST['act_type'] ?? ''); // ✅ เปลี่ยนจาก $_POST['type']
     $desc     = esc($conn, $_POST['description'] ?? '');
     $newImg   = uploadImage('image_url');
     $imgSet   = $newImg ? ", image_url = '" . mysqli_real_escape_string($conn, $newImg) . "'" : '';
