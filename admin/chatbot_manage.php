@@ -1280,6 +1280,7 @@ function fmtTime($t)
                     $has = false;
                     while ($row = mysqli_fetch_assoc($activities)):
                         $has = true;
+                        // ✅ แก้: ใช้ image_url ให้ถูกต้อง และ fallback เป็น string ว่าง
                         $src = imgSrc($row['image_url'] ?? '');
                     ?>
                         <tr>
@@ -1338,7 +1339,8 @@ function fmtTime($t)
                         </div>
                         <div class="form-group">
                             <label class="form-label">ประเภทกิจกรรม <span class="req">*</span></label>
-                            <select name="type" id="a_type" class="form-control" required>
+                            <!-- ✅ แก้: เปลี่ยน name จาก "type" เป็น "act_type" เพื่อไม่ชนกับ hidden field type -->
+                            <select name="act_type" id="a_type" class="form-control" required>
                                 <option value="">-- เลือกประเภท --</option>
                                 <option value="ไหว้พระ">🙏 ไหว้พระ</option>
                                 <option value="ถ่ายรูป">📷 ถ่ายรูป</option>
@@ -1356,8 +1358,9 @@ function fmtTime($t)
                             <div class="current-img-info">รูปปัจจุบัน<br><span style="color:#aaa;">อัปโหลดรูปใหม่เพื่อเปลี่ยน</span></div>
                         </div>
                         <div class="form-group">
+                            <!-- ✅ แก้: เปลี่ยน name จาก "image_url" เป็น "image_file" เพื่อให้ process รับถูก field -->
                             <div class="upload-area" id="a_upload_box">
-                                <input type="file" name="image_url" accept="image/*"
+                                <input type="file" name="image_file" accept="image/*"
                                     onchange="previewModalImg(this,'a_img_preview','a_img_preview_wrap','a_upload_box')">
                                 <span class="upload-icon"><i class="fa fa-image"></i></span>
                                 <div class="upload-title">คลิกเพื่ออัปโหลดรูปภาพ</div>
@@ -1741,6 +1744,7 @@ function fmtTime($t)
         document.getElementById('a_name').value = row.name || '';
         document.getElementById('a_type').value = row.type || '';
         document.getElementById('a_desc').value = row.description || '';
+        // ✅ แก้: ใช้ image_url เป็น field รูปของ activity
         showCurrentImg('a_cur_img_row', 'a_cur_img', row.image_url);
         resetUpload('a_img_preview_wrap', 'a_upload_box', 'a_img_preview');
         openModal('actModal');
