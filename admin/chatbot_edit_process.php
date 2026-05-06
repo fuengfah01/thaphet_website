@@ -2,8 +2,7 @@
 include 'check_login.php';
 include '../config.php';
 
-// ✅ รับ type จากทั้ง type และ record_type
-$type = $_POST['record_type'] ?? $_POST['type'] ?? '';
+$type = $_POST['type'] ?? '';
 $id   = intval($_POST['id'] ?? 0);
 
 function uploadImage($fieldName)
@@ -109,10 +108,10 @@ elseif ($type === 'restaurant') {
     else { $msg = 'เกิดข้อผิดพลาด: ' . mysqli_error($conn); $msg_type = 'danger'; $redirect = 'chatbot_manage.php?tab=restaurant'; }
 }
 
-// UPDATE ACTIVITY ✅ แก้แล้ว
+// UPDATE ACTIVITY ✅ แก้ไข: รับ $_POST['type'] แทน $_POST['act_type']
 elseif ($type === 'activity') {
     $name     = esc($conn, $_POST['name'] ?? '');
-    $act_type = esc($conn, $_POST['act_type'] ?? '');
+    $act_type = esc($conn, $_POST['type'] ?? '');  // ✅ ตรงกับ name="type" ใน form
     $desc     = esc($conn, $_POST['description'] ?? '');
     $sql = "UPDATE activity SET name='$name', type='$act_type', description='$desc' WHERE activity_id=$id";
     if (mysqli_query($conn, $sql)) { $msg = 'แก้ไขกิจกรรมเรียบร้อย'; $redirect = 'chatbot_manage.php?tab=activity'; }
