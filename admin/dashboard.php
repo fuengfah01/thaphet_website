@@ -473,6 +473,17 @@ $chatbot_count = mysqli_fetch_assoc($chatbot_count_res)['total'] ?? 0;
     const genderData = <?= $gender_data_json ?>;
 
     // ===== 1. Visitor Bar Chart =====
+    const dayColorMap = {
+        'อาทิตย์': '#e53935', // แดง
+        'จันทร์':  '#f9c400', // เหลือง
+        'อังคาร':  '#e91e8c', // ชมพู
+        'พุธ':     '#2d8a4e', // เขียว
+        'พฤหัส':   '#e07b30', // ส้ม
+        'ศุกร์':   '#2196f3', // ฟ้า
+        'เสาร์':   '#7b1fa2', // ม่วง
+    };
+    const visitorColors = visitorLabels.map(label => dayColorMap[label] || '#aaa');
+
     const visitorCtx = document.getElementById('visitorChart').getContext('2d');
     new Chart(visitorCtx, {
         type: 'bar',
@@ -480,7 +491,7 @@ $chatbot_count = mysqli_fetch_assoc($chatbot_count_res)['total'] ?? 0;
             labels: visitorLabels,
             datasets: [{
                 data: visitorData,
-                backgroundColor: ['#c0392b', '#d4a017', '#c0796a', '#2d7a3a', '#e07b30', '#5b8de8', '#2c3e7a'],
+                backgroundColor: visitorColors,
                 borderRadius: 6,
                 borderSkipped: false,
             }]
