@@ -9,6 +9,8 @@ if (!$conn) {
     die("Connection failed: " . mysqli_connect_error());
 }
 mysqli_set_charset($conn, "utf8");
+date_default_timezone_set('Asia/Bangkok');
+mysqli_query($conn, "SET time_zone = '+07:00'");
 
 // Cloudinary Config
 define('CLOUDINARY_CLOUD_NAME', 'dtqdc6au1');
