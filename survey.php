@@ -217,7 +217,7 @@ if (isset($_SESSION['survey_done'])) {
                     <span class="gender-label"><span class="gender-emoji">👧</span>หญิง</span>
                 </label>
                 <label class="gender-btn">
-                    <input type="radio" name="gender" value="unspecified">
+                    <input type="radio" name="gender" value="LGBTQ+">
                     <span class="gender-label"><span class="gender-emoji">🌈</span>LGBTQ+</span>
                 </label>
             </div>
