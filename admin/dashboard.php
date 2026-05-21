@@ -67,7 +67,7 @@ foreach ($age_ranges as $range) {
 }
 
 // ===== เพศ (visitor_log) =====
-$gender_map = ['male' => 'เพศชาย', 'female' => 'เพศหญิง', 'unspecified' => 'LGBTQ+'];
+$gender_map = ['male' => 'เพศชาย', 'female' => 'เพศหญิง', 'LGBTQ+' => 'LGBTQ+'];
 $gender_data   = [];
 $gender_labels = [];
 $gender_total_res = mysqli_query($conn, "SELECT COUNT(*) AS total FROM visitor_log");
