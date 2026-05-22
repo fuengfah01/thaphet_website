@@ -4,6 +4,14 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
     include '../config.php';
     header('Content-Type: application/json; charset=utf-8');
 
+    // ── get_min_date shortcut ──
+    if (isset($_GET['get_min_date'])) {
+        $res = mysqli_query($conn, "SELECT MIN(DATE(visited_at)) AS min_date FROM visitor_log");
+        $row = mysqli_fetch_assoc($res);
+        echo json_encode(['min_date' => $row['min_date'] ?? date('Y-m-d')]);
+        exit;
+    }
+
     $date_from = isset($_GET['date_from']) ? mysqli_real_escape_string($conn, $_GET['date_from']) : date('Y-m-d', strtotime('-6 days'));
     $date_to   = isset($_GET['date_to'])   ? mysqli_real_escape_string($conn, $_GET['date_to'])   : date('Y-m-d');
 
@@ -206,7 +214,161 @@ $gender_data_json      = json_encode($gender_data);
 ?>
 
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js">
+// ─── Thai Date Picker ─────────────────────────────────────
+const TH_MONTHS  = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const TH_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const TH_DOWS    = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+
+class ThaiDatePicker {
+    constructor(wrapperId, hiddenId, displayId) {
+        this.wrapper  = document.getElementById(wrapperId);
+        this.hidden   = document.getElementById(hiddenId);
+        this.display  = document.getElementById(displayId);
+        this.popup    = null;
+        this.mode     = 'day'; // day | month | year
+        this.viewYear = 0; this.viewMonth = 0;
+        const parts   = this.hidden.value.split('-');
+        this.viewYear = parseInt(parts[0]); this.viewMonth = parseInt(parts[1]) - 1;
+        this.updateDisplay();
+        this.wrapper.addEventListener('click', e => { e.stopPropagation(); this.toggle(); });
+    }
+    updateDisplay() {
+        const v = this.hidden.value;
+        if (!v) { this.display.textContent = 'เลือกวัน'; return; }
+        const [y,m,d] = v.split('-');
+        this.display.textContent = `${parseInt(d)} ${TH_MONTHS_SHORT[parseInt(m)-1]} ${parseInt(y)+543}`;
+    }
+    toggle() {
+        if (this.popup) { this.close(); return; }
+        // close others
+        document.querySelectorAll('.th-cal-popup').forEach(p => p.remove());
+        document.querySelectorAll('.th-date-picker').forEach(p => p.classList.remove('open'));
+        this.open();
+    }
+    open() {
+        this.mode = 'day';
+        this.popup = document.createElement('div');
+        this.popup.className = 'th-cal-popup';
+        this.wrapper.appendChild(this.popup);
+        this.wrapper.classList.add('open');
+        this.render();
+        setTimeout(() => document.addEventListener('click', this._outside = e => {
+            if (!this.wrapper.contains(e.target)) this.close();
+        }), 0);
+    }
+    close() {
+        if (this.popup) { this.popup.remove(); this.popup = null; }
+        this.wrapper.classList.remove('open');
+        document.removeEventListener('click', this._outside);
+    }
+    render() {
+        if (!this.popup) return;
+        if (this.mode === 'day')   this.renderDays();
+        if (this.mode === 'month') this.renderMonths();
+        if (this.mode === 'year')  this.renderYears();
+    }
+    renderDays() {
+        const y = this.viewYear, m = this.viewMonth;
+        const selected = this.hidden.value;
+        const today    = new Date(); today.setHours(0,0,0,0);
+        const first    = new Date(y, m, 1).getDay();
+        const days     = new Date(y, m+1, 0).getDate();
+        let html = `<div class="th-cal-header">
+            <button onclick="this.closest('.th-cal-popup').__picker.prevMonth()">‹</button>
+            <span class="th-cal-title" onclick="this.closest('.th-cal-popup').__picker.setMode('month')">${TH_MONTHS[m]} ${y+543}</span>
+            <button onclick="this.closest('.th-cal-popup').__picker.nextMonth()">›</button>
+        </div><div class="th-cal-grid">`;
+        TH_DOWS.forEach(d => { html += `<div class="th-cal-dow">${d}</div>`; });
+        for (let i=0; i<first; i++) html += `<div class="th-cal-day empty"></div>`;
+        for (let d=1; d<=days; d++) {
+            const iso  = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+            const isToday = new Date(y,m,d).getTime() === today.getTime();
+            const isSel   = iso === selected;
+            html += `<div class="th-cal-day${isToday?' today':''}${isSel?' selected':''}" onclick="this.closest('.th-cal-popup').__picker.pick('${iso}')">${d}</div>`;
+        }
+        html += `</div>`;
+        this.popup.innerHTML = html;
+        this.popup.__picker = this;
+    }
+    renderMonths() {
+        const cur = this.hidden.value ? parseInt(this.hidden.value.split('-')[1])-1 : -1;
+        let html = `<div class="th-cal-header">
+            <button onclick="this.closest('.th-cal-popup').__picker.viewYear--;this.closest('.th-cal-popup').__picker.render()">‹</button>
+            <span class="th-cal-title" onclick="this.closest('.th-cal-popup').__picker.setMode('year')">${this.viewYear+543}</span>
+            <button onclick="this.closest('.th-cal-popup').__picker.viewYear++;this.closest('.th-cal-popup').__picker.render()">›</button>
+        </div><div class="th-cal-ym-grid">`;
+        TH_MONTHS_SHORT.forEach((mn,i) => {
+            html += `<div class="th-cal-ym-item${i===cur&&this.viewYear===parseInt(this.hidden.value.split('-')[0])?' selected':''}" onclick="this.closest('.th-cal-popup').__picker.pickMonth(${i})">${mn}</div>`;
+        });
+        html += `</div>`;
+        this.popup.innerHTML = html;
+        this.popup.__picker = this;
+    }
+    renderYears() {
+        const base = Math.floor(this.viewYear/12)*12;
+        const curY = this.hidden.value ? parseInt(this.hidden.value.split('-')[0]) : -1;
+        let html = `<div class="th-cal-header">
+            <button onclick="this.closest('.th-cal-popup').__picker.viewYear-=12;this.closest('.th-cal-popup').__picker.render()">‹</button>
+            <span class="th-cal-title">${base+543}–${base+11+543}</span>
+            <button onclick="this.closest('.th-cal-popup').__picker.viewYear+=12;this.closest('.th-cal-popup').__picker.render()">›</button>
+        </div><div class="th-cal-ym-grid">`;
+        for (let i=0; i<12; i++) {
+            const yr = base+i;
+            html += `<div class="th-cal-ym-item${yr===curY?' selected':''}" onclick="this.closest('.th-cal-popup').__picker.pickYear(${yr})">${yr+543}</div>`;
+        }
+        html += `</div>`;
+        this.popup.innerHTML = html;
+        this.popup.__picker = this;
+    }
+    setMode(m) { this.mode = m; this.render(); }
+    prevMonth() { this.viewMonth--; if(this.viewMonth<0){this.viewMonth=11;this.viewYear--;} this.render(); }
+    nextMonth() { this.viewMonth++; if(this.viewMonth>11){this.viewMonth=0;this.viewYear++;} this.render(); }
+    pickMonth(m) { this.viewMonth = m; this.mode = 'day'; this.render(); }
+    pickYear(y)  { this.viewYear  = y; this.mode = 'month'; this.render(); }
+    pick(iso) {
+        this.hidden.value = iso;
+        this.updateDisplay();
+        this.close();
+        // clear quick-range active
+        document.querySelectorAll('.btn-quick-range').forEach(b=>b.classList.remove('active'));
+    }
+}
+
+// init pickers after DOM ready
+document.addEventListener('DOMContentLoaded', () => {
+    window._pickerFrom = new ThaiDatePicker('pickerFrom', 'dateFrom', 'displayFrom');
+    window._pickerTo   = new ThaiDatePicker('pickerTo',   'dateTo',   'displayTo');
+});
+
+// ─── ปุ่มทั้งหมด ──────────────────────────────────────────
+function setAllTime(btn) {
+    document.querySelectorAll('.btn-quick-range').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    // ดึงวันที่เก่าสุดใน DB จาก visitor_log จริงๆ ผ่าน AJAX
+    fetch('dashboard.php?ajax=1&get_min_date=1')
+        .then(r=>r.json())
+        .then(d=>{
+            const minDate = d.min_date || '2026-01-01';
+            const today   = new Date().toISOString().slice(0,10);
+            document.getElementById('dateFrom').value = minDate;
+            document.getElementById('dateTo').value   = today;
+            if(window._pickerFrom) { window._pickerFrom.hidden.value=minDate; window._pickerFrom.updateDisplay(); }
+            if(window._pickerTo)   { window._pickerTo.hidden.value=today;   window._pickerTo.updateDisplay(); }
+            applyDateFilter();
+        })
+        .catch(()=>{
+            // fallback
+            const today = new Date().toISOString().slice(0,10);
+            document.getElementById('dateFrom').value = '2026-01-01';
+            document.getElementById('dateTo').value   = today;
+            if(window._pickerFrom) { window._pickerFrom.hidden.value='2026-01-01'; window._pickerFrom.updateDisplay(); }
+            if(window._pickerTo)   { window._pickerTo.hidden.value=today; window._pickerTo.updateDisplay(); }
+            applyDateFilter();
+        });
+}
+
+</script>
 
 <style>
 /* ===== Dashboard Layout ===== */
@@ -310,6 +472,38 @@ $gender_data_json      = json_encode($gender_data);
     justify-content:center; background:rgba(255,255,255,.85);
     border-radius:12px; font-size:13px; color:#888; gap:8px; z-index:10;
 }
+
+/* ===== Thai Date Picker ===== */
+.th-date-picker {
+    display:inline-flex; align-items:center; cursor:pointer;
+    border:1.5px solid #ddd; border-radius:8px; padding:6px 12px;
+    font-size:13px; color:#333; background:#fff; min-width:130px;
+    transition:border-color .15s; user-select:none; position:relative;
+}
+.th-date-picker:hover { border-color:#2d7a3a; }
+.th-date-picker.open  { border-color:#2d7a3a; box-shadow:0 0 0 3px rgba(45,122,58,.12); }
+.th-cal-popup {
+    position:absolute; top:calc(100% + 6px); left:0; z-index:9999;
+    background:#fff; border-radius:14px; padding:14px;
+    box-shadow:0 8px 32px rgba(0,0,0,.14); width:260px; font-family:inherit;
+}
+.th-cal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.th-cal-header button { background:none; border:none; cursor:pointer; font-size:16px; color:#555; padding:4px 8px; border-radius:6px; }
+.th-cal-header button:hover { background:#f0f0f0; }
+.th-cal-title { font-size:13px; font-weight:700; color:#1a1a1a; cursor:pointer; padding:4px 8px; border-radius:6px; }
+.th-cal-title:hover { background:#f0f0f0; }
+.th-cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.th-cal-dow { text-align:center; font-size:10px; font-weight:700; color:#888; padding:4px 0; }
+.th-cal-day { text-align:center; font-size:12px; padding:6px 2px; border-radius:8px; cursor:pointer; transition:background .1s; }
+.th-cal-day:hover { background:#e6f4ea; color:#2d7a3a; }
+.th-cal-day.today { font-weight:700; color:#2d7a3a; }
+.th-cal-day.selected { background:#2d7a3a; color:#fff !important; font-weight:700; }
+.th-cal-day.other-month { color:#ccc; }
+.th-cal-day.empty { cursor:default; }
+.th-cal-ym-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-top:6px; }
+.th-cal-ym-item { text-align:center; padding:7px 4px; border-radius:8px; font-size:12px; cursor:pointer; transition:background .1s; }
+.th-cal-ym-item:hover { background:#e6f4ea; color:#2d7a3a; }
+.th-cal-ym-item.selected { background:#2d7a3a; color:#fff; font-weight:700; }
 </style>
 
 <div class="dashboard-wrapper">
@@ -363,16 +557,16 @@ $gender_data_json      = json_encode($gender_data);
     <div class="date-range-bar">
         <i class="fa fa-calendar-alt" style="color:#2d7a3a;font-size:15px;"></i>
         <label>ช่วงวันที่:</label>
-        <input type="date" id="dateFrom" value="<?= $default_from ?>">
+        <div class="th-date-picker" id="pickerFrom" data-target="dateFrom"><span id="displayFrom"></span><i class="fa fa-calendar-alt" style="margin-left:6px;color:#aaa;font-size:11px;"></i></div><input type="hidden" id="dateFrom" value="<?= $default_from ?>">
         <span class="date-range-sep">—</span>
-        <input type="date" id="dateTo"   value="<?= $default_to ?>">
+        <div class="th-date-picker" id="pickerTo" data-target="dateTo"><span id="displayTo"></span><i class="fa fa-calendar-alt" style="margin-left:6px;color:#aaa;font-size:11px;"></i></div><input type="hidden" id="dateTo" value="<?= $default_to ?>">
         <button class="btn-filter" id="btnFilter" onclick="applyDateFilter()">
             <i class="fa fa-filter"></i> กรองข้อมูล
         </button>
         <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <button class="btn-quick-range active" onclick="setQuickRange(7,this)">7 วัน</button>
             <button class="btn-quick-range"        onclick="setQuickRange(30,this)">30 วัน</button>
-            <button class="btn-quick-range"        onclick="setQuickRange(90,this)">90 วัน</button>
+            <button class="btn-quick-range"        onclick="setAllTime(this)">ทั้งหมด</button>
         </div>
         <span class="date-range-info" id="dateRangeInfo">แสดงข้อมูล 7 วันย้อนหลัง</span>
     </div>
@@ -525,8 +719,12 @@ function setQuickRange(days, btn) {
     const to   = new Date();
     const from = new Date();
     from.setDate(from.getDate() - (days - 1));
-    document.getElementById('dateFrom').value = from.toISOString().slice(0,10);
-    document.getElementById('dateTo').value   = to.toISOString().slice(0,10);
+    const fromISO = from.toISOString().slice(0,10);
+    const toISO   = to.toISOString().slice(0,10);
+    document.getElementById('dateFrom').value = fromISO;
+    document.getElementById('dateTo').value   = toISO;
+    if(window._pickerFrom){ window._pickerFrom.hidden.value=fromISO; window._pickerFrom.updateDisplay(); }
+    if(window._pickerTo)  { window._pickerTo.hidden.value=toISO;     window._pickerTo.updateDisplay(); }
     applyDateFilter();
 }
 
