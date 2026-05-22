@@ -1,10 +1,7 @@
 <?php
-include 'check_login.php';
-include '../config.php';
-include 'header.php';
-
-// ===== Handle AJAX date-range request =====
+// ===== Handle AJAX date-range request (ต้องอยู่ก่อน include header.php) =====
 if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
+    include '../config.php';
     header('Content-Type: application/json; charset=utf-8');
 
     $date_from = isset($_GET['date_from']) ? mysqli_real_escape_string($conn, $_GET['date_from']) : date('Y-m-d', strtotime('-6 days'));
@@ -99,6 +96,11 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
     ], JSON_UNESCAPED_UNICODE);
     exit;
 }
+
+// ===== โหลดปกติ (ไม่ใช่ AJAX) =====
+include 'check_login.php';
+include '../config.php';
+include 'header.php';
 
 // ===== Static counts (ไม่มีวันที่ — แสดงตลอดกาล) =====
 $place_count_result = mysqli_query($conn, "SELECT COUNT(*) AS total FROM place");
