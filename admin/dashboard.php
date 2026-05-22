@@ -27,7 +27,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
 
     // Top 5 places in range
     $top_res = mysqli_query($conn, "
-        SELECT p.place_name, COUNT(pvl.view_id) AS view_count
+        SELECT p.place_name, COUNT(*) AS view_count
         FROM place_view_log pvl
         JOIN place p ON p.place_id = pvl.place_id
         WHERE DATE(pvl.viewed_at) BETWEEN '$date_from' AND '$date_to'
@@ -54,13 +54,19 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
         $age_arr[] = ['range' => $r, 'count' => $cnt, 'pct' => round($cnt / $age_total * 100)];
     }
 
-    // Gender in range
-    $gender_map = ['male' => 'เพศชาย', 'female' => 'เพศหญิง', 'unspecified' => 'ไม่ระบุ'];
+    // Gender in range (dynamic — รองรับ LGBTQ+ และค่าอื่น)
     $g_labels = []; $g_data = [];
-    foreach ($gender_map as $val => $lbl) {
-        $res = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM visitor_log WHERE gender = '$val' AND DATE(visited_at) BETWEEN '$date_from' AND '$date_to'");
+    $g_res = mysqli_query($conn, "SELECT gender, COUNT(*) AS cnt FROM visitor_log WHERE DATE(visited_at) BETWEEN '$date_from' AND '$date_to' GROUP BY gender ORDER BY cnt DESC");
+    while ($grow = mysqli_fetch_assoc($g_res)) {
+        $lbl = match(strtolower($grow['gender'])) {
+            'male'        => 'เพศชาย',
+            'female'      => 'เพศหญิง',
+            'lgbtq+'      => 'LGBTQ+',
+            'unspecified' => 'ไม่ระบุ',
+            default       => $grow['gender']
+        };
         $g_labels[] = $lbl;
-        $g_data[]   = (int)(mysqli_fetch_assoc($res)['cnt'] ?? 0);
+        $g_data[]   = (int)$grow['cnt'];
     }
 
     // Total visitors in range
@@ -105,7 +111,7 @@ for ($i = 6; $i >= 0; $i--) {
 
 // ===== Top 5 สถานที่ที่กดชมมากที่สุด =====
 $top_places_result = mysqli_query($conn, "
-    SELECT p.place_name, COUNT(pvl.view_id) AS view_count
+    SELECT p.place_name, COUNT(*) AS view_count
     FROM place_view_log pvl
     JOIN place p ON p.place_id = pvl.place_id
     GROUP BY pvl.place_id
@@ -142,19 +148,24 @@ foreach ($age_ranges as $range) {
 }
 
 // ===== เพศ (visitor_log) =====
-$gender_map = ['male' => 'เพศชาย', 'female' => 'เพศหญิง', 'unspecified' => 'ไม่ระบุ'];
+// ดึง gender จริงจาก DB (dynamic) ไม่ hardcode เพื่อรองรับทุกค่า เช่น LGBTQ+
 $gender_data   = [];
 $gender_labels = [];
+$gender_res_all = mysqli_query($conn, "SELECT gender, COUNT(*) AS cnt FROM visitor_log GROUP BY gender ORDER BY cnt DESC");
+while ($grow = mysqli_fetch_assoc($gender_res_all)) {
+    $lbl = match(strtolower($grow['gender'])) {
+        'male'        => 'เพศชาย',
+        'female'      => 'เพศหญิง',
+        'lgbtq+'      => 'LGBTQ+',
+        'unspecified' => 'ไม่ระบุ',
+        default       => $grow['gender']
+    };
+    $gender_labels[] = $lbl;
+    $gender_data[]   = (int)$grow['cnt'];
+}
 $gender_total_res = mysqli_query($conn, "SELECT COUNT(*) AS total FROM visitor_log");
 $gender_total = (int)(mysqli_fetch_assoc($gender_total_res)['total'] ?? 1);
 if ($gender_total == 0) $gender_total = 1;
-
-foreach ($gender_map as $val => $label) {
-    $res = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM visitor_log WHERE gender = '$val'");
-    $cnt = (int)(mysqli_fetch_assoc($res)['cnt'] ?? 0);
-    $gender_labels[] = $label;
-    $gender_data[]   = $cnt;
-}
 
 // ===== จำนวน visitor ทั้งหมด =====
 $total_visitor_res = mysqli_query($conn, "SELECT COUNT(*) AS total FROM visitor_log");
@@ -169,19 +180,10 @@ $v_prev_res  = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM visitor_log WHER
 $v_prev_week = (int)(mysqli_fetch_assoc($v_prev_res)['cnt'] ?? 0);
 $visitor_pct_diff = ($v_prev_week > 0) ? round(($v_this_week - $v_prev_week) / $v_prev_week * 100) : ($v_this_week > 0 ? 100 : 0);
 
-// place เพิ่มขึ้นกี่แห่งใน 7 วัน vs 7 วันก่อน
-$p_this_res  = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM place WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
-$p_this_week = (int)(mysqli_fetch_assoc($p_this_res)['cnt'] ?? 0);
-$p_prev_res  = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM place WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY) AND created_at < DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
-$p_prev_week = (int)(mysqli_fetch_assoc($p_prev_res)['cnt'] ?? 0);
-$place_pct_diff = ($p_prev_week > 0) ? round(($p_this_week - $p_prev_week) / $p_prev_week * 100) : ($p_this_week > 0 ? 100 : 0);
-
-// content เพิ่มขึ้นกี่ชิ้นใน 7 วัน vs 7 วันก่อน
-$c_this_res  = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM content WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
-$c_this_week = (int)(mysqli_fetch_assoc($c_this_res)['cnt'] ?? 0);
-$c_prev_res  = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM content WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 14 DAY) AND created_at < DATE_SUB(CURDATE(), INTERVAL 7 DAY)");
-$c_prev_week = (int)(mysqli_fetch_assoc($c_prev_res)['cnt'] ?? 0);
-$content_pct_diff = ($c_prev_week > 0) ? round(($c_this_week - $c_prev_week) / $c_prev_week * 100) : ($c_this_week > 0 ? 100 : 0);
+// ตาราง place และ content ไม่มีคอลัมน์วันที่ → % เปรียบเทียบจาก visitor_log แทน
+// place/content แสดงเป็น 0 เพราะไม่มีข้อมูลวันที่ในตาราง
+$place_pct_diff   = 0;
+$content_pct_diff = 0;
 
 // helper สร้าง badge %
 function pct_badge(int $pct): string {
@@ -678,6 +680,9 @@ $chatbot_count = mysqli_fetch_assoc($chatbot_count_res)['total'] ?? 0;
     const genderLabels  = <?= $gender_labels_json ?>;
     const genderData    = <?= $gender_data_json ?>;
     const ageColors     = ['#2d7a3a','#d4a017','#c0796a','#2c3e7a','#e07b30','#5b8de8'];
+    // สีสำหรับ gender chart — dynamic ตามจำนวน gender จริงใน DB
+    const genderColorMap = { 'เพศชาย': '#2c3e7a', 'เพศหญิง': '#d4a017', 'LGBTQ+': '#c0796a', 'ไม่ระบุ': '#aaa' };
+    const genderColors = genderLabels.map(l => genderColorMap[l] || '#5b8de8');
     const barColors7    = ['#c0392b','#d4a017','#c0796a','#2d7a3a','#e07b30','#5b8de8','#2c3e7a'];
 
     // ===== 1. Visitor Bar Chart =====
@@ -862,7 +867,7 @@ $chatbot_count = mysqli_fetch_assoc($chatbot_count_res)['total'] ?? 0;
                     type: 'doughnut',
                     data: { labels: data.gender_labels,
                         datasets: [{ data: data.gender_data,
-                            backgroundColor: ['#c0392b','#d4a017','#2c3e7a'],
+                            backgroundColor: data.gender_labels.map(l => genderColorMap[l] || '#5b8de8'),
                             borderWidth: data.gender_data.map(v => v === 0 ? 0 : 3),
                             borderColor: '#fff', hoverOffset: 6 }] },
                     options: {
