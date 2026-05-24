@@ -888,25 +888,32 @@ $all_place_names_json  = json_encode($all_place_names,  JSON_UNESCAPED_UNICODE);
         $age_colors = ['#2d7a3a','#d4a017','#c0796a','#2c3e7a','#e07b30','#5b8de8'];
         $i = 0;
       ?>
-      <ul class="age-bar-list" id="ageBarList">
-        <?php foreach ($age_ranges as $range):
-          $cnt   = $age_counts[$range];
-          $pct   = ($age_total > 0) ? round($cnt / $age_total * 100) : 0;
-          $color = $age_colors[$i % count($age_colors)];
-          $i++;
-        ?>
-        <li class="age-bar-item">
-          <span class="age-label"><?= $range ?></span>
-          <div class="age-track">
-            <div class="age-fill" style="width:<?= $pct ?>%; background:<?= $color ?>;"></div>
-          </div>
-          <span class="age-pct">
-            <?= $pct ?>%<br>
-            <small style="font-weight:400; color:#999;">(<?= $cnt ?>)</small>
-          </span>
-        </li>
-        <?php endforeach; ?>
-      </ul>
+      <!-- ▼ จุดที่ 1: ห่อด้วย chart-wrap และเพิ่ม loadingAge -->
+      <div class="chart-wrap">
+        <ul class="age-bar-list" id="ageBarList">
+          <?php foreach ($age_ranges as $range):
+            $cnt   = $age_counts[$range];
+            $pct   = ($age_total > 0) ? round($cnt / $age_total * 100) : 0;
+            $color = $age_colors[$i % count($age_colors)];
+            $i++;
+          ?>
+          <li class="age-bar-item">
+            <span class="age-label"><?= $range ?></span>
+            <div class="age-track">
+              <div class="age-fill" style="width:<?= $pct ?>%; background:<?= $color ?>;"></div>
+            </div>
+            <span class="age-pct">
+              <?= $pct ?>%<br>
+              <small style="font-weight:400; color:#999;">(<?= $cnt ?>)</small>
+            </span>
+          </li>
+          <?php endforeach; ?>
+        </ul>
+        <div class="chart-loading" id="loadingAge" style="display:none;">
+          <i class="fa fa-spinner fa-spin"></i> กำลังโหลด...
+        </div>
+      </div>
+      <!-- ▲ จุดที่ 1 จบ -->
     </div>
 
     <div class="chart-card">
@@ -1204,7 +1211,8 @@ async function applyAdvFilter() {
     btn.disabled  = true;
     btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> กำลังโหลด...';
 
-    ['loadingVisitor', 'loadingPlace', 'loadingGender'].forEach(id => {
+    // ▼ จุดที่ 2: เพิ่ม loadingAge ตอน show
+    ['loadingVisitor', 'loadingPlace', 'loadingGender', 'loadingAge'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.style.display = 'flex';
     });
@@ -1335,7 +1343,8 @@ async function applyAdvFilter() {
         console.error(e);
         alert('เกิดข้อผิดพลาดในการโหลดข้อมูล');
     } finally {
-        ['loadingVisitor', 'loadingPlace', 'loadingGender'].forEach(id => {
+        // ▼ จุดที่ 3: เพิ่ม loadingAge ตอน hide
+        ['loadingVisitor', 'loadingPlace', 'loadingGender', 'loadingAge'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
         });
