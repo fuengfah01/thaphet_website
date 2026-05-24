@@ -557,19 +557,6 @@ $all_place_names_json  = json_encode($all_place_names,  JSON_UNESCAPED_UNICODE);
     overflow-y: auto;
 }
 
-.fn-vis-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.fn-vis-row label { font-size: 12px; color: #666; width: 38px; flex-shrink: 0; }
-.fn-vis-row input[type=range] { flex: 1; accent-color: #2d7a3a; cursor: pointer; }
-.fn-vis-val {
-    font-size: 11px;
-    font-weight: 700;
-    color: #2d7a3a;
-    background: #e6f4ea;
-    padding: 2px 6px;
-    border-radius: 6px;
-    min-width: 32px;
-    text-align: center;
-}
 
 .fn-panel-footer {
     display: flex;
@@ -839,40 +826,9 @@ $all_place_names_json  = json_encode($all_place_names,  JSON_UNESCAPED_UNICODE);
       </div>
     </div>
 
-    <!-- ⑤ ผู้เข้าชม/วัน -->
-    <div class="fn-dropdown" id="dd-vis">
-      <button class="fn-btn" id="btn-vis" onclick="toggleDropdown('vis')">
-        <i class="fa fa-chart-bar" style="font-size:12px;"></i>
-        <span id="btn-vis-label">ผู้เข้าชม/วัน</span>
-        <span class="fn-chevron">▾</span>
-      </button>
-      <div class="fn-panel" id="panel-vis">
-        <div class="fn-panel-label">จำนวนผู้เข้าชมต่อวัน (คน)</div>
-        <div class="fn-vis-row">
-          <label>ต่ำสุด</label>
-          <input type="range" id="fnVisMin" min="0" max="500" step="10" value="0"
-                 oninput="document.getElementById('fnVisMinVal').textContent=this.value; syncFnVis();">
-          <span class="fn-vis-val" id="fnVisMinVal">0</span>
-        </div>
-        <div class="fn-vis-row">
-          <label>สูงสุด</label>
-          <input type="range" id="fnVisMax" min="0" max="500" step="10" value="500"
-                 oninput="document.getElementById('fnVisMaxVal').textContent=this.value; syncFnVis();">
-          <span class="fn-vis-val" id="fnVisMaxVal">500</span>
-        </div>
-        <div style="display:flex; justify-content:space-between; font-size:10px; color:#bbb; margin-top:-4px; padding:0 2px;">
-          <span>0</span><span>250</span><span>500+</span>
-        </div>
-        <div class="fn-panel-footer">
-          <button class="fn-footer-reset" onclick="resetFnVis()">ล้าง</button>
-          <button class="fn-footer-done" onclick="closeDropdown('vis')">เสร็จสิ้น</button>
-        </div>
-      </div>
-    </div>
-
     <div class="fn-sep"></div>
 
-    <!-- ⑥ ปุ่มกรอง -->
+    <!-- ⑤ ปุ่มกรอง -->
     <button class="fn-apply-btn" id="btnFnApply" onclick="applyAdvFilter()">
       <i class="fa fa-filter"></i> กรอง
       <span class="fn-badge" id="fnCountBadge" style="display:none;">0</span>
@@ -1192,32 +1148,10 @@ function filterFnPlaces(q) {
     renderFnPlaceChips();
 }
 
-// ── Visitor Range ──
-function syncFnVis() {
-    const mn = parseInt(document.getElementById('fnVisMin').value);
-    const mx = parseInt(document.getElementById('fnVisMax').value);
-    if (mn > mx) {
-        document.getElementById('fnVisMin').value = mx;
-        document.getElementById('fnVisMinVal').textContent = mx;
-    }
-    updateFnBadge();
-}
-
-function resetFnVis() {
-    document.getElementById('fnVisMin').value = 0;
-    document.getElementById('fnVisMax').value = 500;
-    document.getElementById('fnVisMinVal').textContent = 0;
-    document.getElementById('fnVisMaxVal').textContent = 500;
-    updateFnBadge();
-}
-
 // ── Badge & Button Labels ──
 function updateFnBadge() {
     let count = 0;
     if (advCurRange !== '7d') count++;
-    const mn = parseInt(document.getElementById('fnVisMin').value);
-    const mx = parseInt(document.getElementById('fnVisMax').value);
-    if (mn > 0 || mx < 500) count++;
     count += selAges.size + selGenders.size + selPlaces.size;
 
     const badge = document.getElementById('fnCountBadge');
@@ -1240,11 +1174,6 @@ function updateFnBadge() {
     document.getElementById('btn-place-label').textContent =
         selPlaces.size > 0 ? `สถานที่ (${selPlaces.size})` : 'สถานที่';
     document.getElementById('btn-place').classList.toggle('active', selPlaces.size > 0);
-
-    const visActive = mn > 0 || mx < 500;
-    document.getElementById('btn-vis-label').textContent =
-        visActive ? `ผู้เข้าชม (${mn}–${mx})` : 'ผู้เข้าชม/วัน';
-    document.getElementById('btn-vis').classList.toggle('active', visActive);
 }
 
 // ── Reset All ──
@@ -1253,7 +1182,6 @@ function resetAdvFilter() {
     document.querySelectorAll('#panel-time .fn-chip').forEach(b => b.classList.remove('sel'));
     document.querySelector('#panel-time [data-range="7d"]').classList.add('sel');
     document.getElementById('fnCustomDateRow').style.display = 'none';
-    resetFnVis();
     clearFnGroup('age');
     clearFnGroup('gender');
     clearFnGroup('place');
@@ -1285,14 +1213,11 @@ async function applyAdvFilter() {
         const ageParam    = [...selAges].join(',');
         const genderParam = [...selGenders].join(',');
         const placeParam  = [...selPlaces].join(',');
-        const visMin      = document.getElementById('fnVisMin').value;
-        const visMax      = document.getElementById('fnVisMax').value;
 
         const url = `dashboard.php?ajax=1&date_from=${from}&date_to=${to}`
                   + `&age=${encodeURIComponent(ageParam)}`
                   + `&gender=${encodeURIComponent(genderParam)}`
-                  + `&place=${encodeURIComponent(placeParam)}`
-                  + `&vis_min=${visMin}&vis_max=${visMax}`;
+                  + `&place=${encodeURIComponent(placeParam)}`;
 
         const res  = await fetch(url);
         const data = await res.json();
@@ -1403,7 +1328,6 @@ async function applyAdvFilter() {
         if (selAges.size)    filterParts.push(`อายุ: ${[...selAges].join(', ')}`);
         if (selGenders.size) filterParts.push(`เพศ: ${[...selGenders].join(', ')}`);
         if (selPlaces.size)  filterParts.push(`สถานที่: ${selPlaces.size} แห่ง`);
-        if (parseInt(visMin) > 0 || parseInt(visMax) < 500) filterParts.push(`ผู้เข้าชม: ${visMin}–${visMax} คน`);
         document.getElementById('activeFilterSummary').textContent =
             filterParts.length > 0 ? '| ' + filterParts.join(' · ') : '';
 
