@@ -22,7 +22,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
     include '../config.php';
     header('Content-Type: application/json; charset=utf-8');
 
-    // -- ช่วงวันที่ --
     $date_from = isset($_GET['date_from'])
         ? mysqli_real_escape_string($conn, $_GET['date_from'])
         : date('Y-m-d', strtotime('-6 days'));
@@ -31,21 +30,18 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
         ? mysqli_real_escape_string($conn, $_GET['date_to'])
         : date('Y-m-d');
 
-    // -- ตัวกรองเพิ่มเติม --
     $filter_ages    = isset($_GET['age'])    && $_GET['age']    !== '' ? array_map('trim', explode(',', $_GET['age']))    : [];
     $filter_genders = isset($_GET['gender']) && $_GET['gender'] !== '' ? array_map('trim', explode(',', $_GET['gender'])) : [];
     $filter_places  = isset($_GET['place'])  && $_GET['place']  !== '' ? array_map('trim', explode(',', $_GET['place']))  : [];
     $vis_min        = isset($_GET['vis_min']) ? (int)$_GET['vis_min'] : 0;
     $vis_max        = isset($_GET['vis_max']) ? (int)$_GET['vis_max'] : 999999;
 
-    // -- สร้าง WHERE เพิ่มสำหรับ visitor_log --
     $extra_visitor_where = "";
     if (!empty($filter_ages)) {
         $safe_ages = array_map(fn($a) => "'" . mysqli_real_escape_string($conn, $a) . "'", $filter_ages);
         $extra_visitor_where .= " AND age_range IN (" . implode(',', $safe_ages) . ")";
     }
     if (!empty($filter_genders)) {
-        // แปลงชื่อไทย → ค่าในฐานข้อมูล
         $gender_map = ['เพศชาย' => 'male', 'เพศหญิง' => 'female', 'LGBTQ+' => 'lgbtq+', 'ไม่ระบุ' => 'unspecified'];
         $safe_genders = array_map(function($g) use ($conn, $gender_map) {
             $db_val = $gender_map[$g] ?? $g;
@@ -54,7 +50,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
         $extra_visitor_where .= " AND gender IN (" . implode(',', $safe_genders) . ")";
     }
 
-    // -- กราฟผู้เข้าชมรายวัน --
     $v_labels = [];
     $v_data   = [];
     $day_th   = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัส', 'ศุกร์', 'เสาร์'];
@@ -74,7 +69,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
         ");
         $day_cnt  = (int) (mysqli_fetch_assoc($res)['cnt'] ?? 0);
 
-        // กรองตามช่วงจำนวนผู้เข้าชม
         if ($day_cnt >= $vis_min && $day_cnt <= $vis_max) {
             $v_data[] = $day_cnt;
         } else {
@@ -83,7 +77,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
         $cur = strtotime('+1 day', $cur);
     }
 
-    // -- Top 5 สถานที่ --
     $place_where = "";
     if (!empty($filter_places)) {
         $safe_places = array_map(fn($p) => "'" . mysqli_real_escape_string($conn, $p) . "'", $filter_places);
@@ -117,7 +110,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
         }
     }
 
-    // -- ช่วงอายุ --
     $age_ranges  = ['15-25', '26-35', '36-45', '46-55', '56-65', '65+'];
     $age_tot_res = mysqli_query($conn, "
         SELECT COUNT(*) AS total
@@ -144,7 +136,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
         ];
     }
 
-    // -- เพศ --
     $g_labels = [];
     $g_data   = [];
     $g_res    = mysqli_query($conn, "
@@ -168,7 +159,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
         $g_data[]   = (int) $grow['cnt'];
     }
 
-    // -- ยอดผู้เข้าชมรวม --
     $total_v_res = mysqli_query($conn, "
         SELECT COUNT(*) AS total
         FROM visitor_log
@@ -177,7 +167,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
     ");
     $total_v = (int) (mysqli_fetch_assoc($total_v_res)['total'] ?? 0);
 
-    // -- เปรียบเทียบกับช่วงก่อนหน้า --
     $range_days = max(1, (int) ((strtotime($date_to) - strtotime($date_from)) / 86400) + 1);
     $prev_to    = date('Y-m-d', strtotime($date_from . ' -1 day'));
     $prev_from  = date('Y-m-d', strtotime($prev_to . ' -' . ($range_days - 1) . ' days'));
@@ -279,7 +268,6 @@ if (empty($top_place_labels)) {
     }
 }
 
-// -- ดึงรายชื่อสถานที่ทั้งหมดสำหรับตัวกรอง --
 $all_places_res = mysqli_query($conn, "SELECT place_name FROM place ORDER BY place_name ASC");
 $all_place_names = [];
 while ($row = mysqli_fetch_assoc($all_places_res)) {
@@ -428,166 +416,105 @@ $all_place_names_json  = json_encode($all_place_names,  JSON_UNESCAPED_UNICODE);
 .quick-card-info h3 { margin: 2px 0 0; font-size: 22px; font-weight: 700; color: #1a1a1a; }
 .quick-card-info span { font-size: 13px; font-weight: 600; color: #2d7a3a; }
 
-/* ── Advanced Filter Panel ── */
-.adv-filter-panel {
-    background: #fff;
-    border-radius: 16px;
-    box-shadow: 0 2px 10px rgba(0,0,0,.06);
-    margin-bottom: 20px;
-    overflow: hidden;
-    border: 1.5px solid #e8ede8;
-}
-.adv-filter-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 14px 20px;
-    border-bottom: 1px solid #f0f0f0;
-    cursor: pointer;
-    user-select: none;
-    background: #fafcfa;
-}
-.adv-filter-header-left {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #1a1a1a;
-}
-.adv-filter-count-badge {
-    background: #2d7a3a;
-    color: #fff;
-    font-size: 11px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 20px;
-    min-width: 22px;
-    text-align: center;
-    display: none;
-}
-.adv-filter-count-badge.show { display: inline-block; }
-.adv-filter-toggle-btn {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 12px;
-    color: #666;
-    background: #f0f0f0;
-    border: none;
-    border-radius: 8px;
-    padding: 6px 12px;
-    cursor: pointer;
-    font-family: inherit;
-    transition: background .15s;
-}
-.adv-filter-toggle-btn:hover { background: #e0e0e0; }
-
-.adv-filter-body {
-    padding: 20px;
-    display: grid;
-    gap: 18px;
-}
-.adv-filter-grid2 {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-}
-@media (max-width: 700px) { .adv-filter-grid2 { grid-template-columns: 1fr; } }
-
-.adv-filter-section-label {
-    font-size: 11px;
-    font-weight: 700;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    margin-bottom: 10px;
-}
-.adv-filter-divider {
-    width: 100%;
-    height: 1px;
-    background: #f0f0f0;
-}
-
-/* Quick Date Buttons */
-.quick-date-row { display: flex; flex-wrap: wrap; gap: 6px; }
-.qdrange-btn {
-    font-size: 12px;
-    padding: 5px 13px;
-    border-radius: 20px;
-    border: 1.5px solid #ddd;
-    background: #f7f7f7;
-    color: #555;
-    cursor: pointer;
-    transition: all .15s;
-    font-family: inherit;
-    white-space: nowrap;
-}
-.qdrange-btn:hover { border-color: #2d7a3a; color: #2d7a3a; background: #f0f8f1; }
-.qdrange-btn.active { background: #2d7a3a; border-color: #2d7a3a; color: #fff; font-weight: 600; }
-
-.custom-date-row {
+/* ── Filter Navbar ── */
+.filter-navbar {
     display: flex;
     align-items: center;
     gap: 8px;
     flex-wrap: wrap;
-    margin-top: 10px;
+    background: #fff;
+    border-radius: 16px;
+    padding: 10px 16px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.06);
+    border: 1.5px solid #e8ede8;
+    position: relative;
+    z-index: 100;
 }
-.custom-date-input-wrap {
+
+.fn-dropdown { position: relative; }
+
+.fn-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 13px;
+    border-radius: 20px;
+    border: 1.5px solid #ddd;
+    background: #f7f7f7;
+    color: #444;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .15s;
+    white-space: nowrap;
+    user-select: none;
+}
+.fn-btn:hover { border-color: #2d7a3a; color: #2d7a3a; background: #f0f8f1; }
+.fn-btn.active { border-color: #2d7a3a; background: #e6f4ea; color: #1e6b2b; }
+.fn-btn .fn-badge {
+    background: #2d7a3a;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 6px;
+    border-radius: 20px;
+    min-width: 18px;
+    text-align: center;
+}
+.fn-btn .fn-chevron { font-size: 10px; opacity: .5; transition: transform .2s; }
+.fn-btn.open .fn-chevron { transform: rotate(180deg); }
+
+.fn-panel {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    background: #fff;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.12);
+    padding: 16px;
+    min-width: 280px;
+    z-index: 999;
+    display: none;
+}
+.fn-panel.show { display: block; }
+.fn-panel-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    margin-bottom: 10px;
+}
+
+.fn-quick-dates { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+
+.fn-custom-date { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.fn-date-wrap {
     display: flex;
     align-items: center;
     gap: 6px;
-    background: #f7f7f7;
     border: 1.5px solid #ddd;
     border-radius: 8px;
-    padding: 6px 10px;
-    font-size: 13px;
-    transition: border-color .15s;
+    padding: 5px 9px;
+    font-size: 12px;
+    background: #f7f7f7;
 }
-.custom-date-input-wrap:focus-within { border-color: #2d7a3a; }
-.custom-date-input-wrap input[type=date] {
+.fn-date-wrap input[type=date] {
     border: none;
     background: transparent;
-    font-size: 13px;
+    font-size: 12px;
     color: #333;
     outline: none;
     font-family: inherit;
 }
-.custom-date-sep { font-size: 13px; color: #bbb; }
 
-/* Visitor Range Slider */
-.vis-range-wrap { display: flex; flex-direction: column; gap: 10px; }
-.vis-range-row { display: flex; align-items: center; gap: 10px; }
-.vis-range-row label { font-size: 12px; color: #666; width: 36px; flex-shrink: 0; }
-.vis-range-row input[type=range] {
-    flex: 1;
-    accent-color: #2d7a3a;
-    height: 4px;
-    cursor: pointer;
-}
-.vis-range-val {
+.fn-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.fn-chip {
     font-size: 12px;
-    font-weight: 700;
-    color: #2d7a3a;
-    min-width: 36px;
-    text-align: right;
-    background: #e6f4ea;
-    padding: 2px 7px;
-    border-radius: 6px;
-}
-.vis-range-scale {
-    display: flex;
-    justify-content: space-between;
-    font-size: 10px;
-    color: #bbb;
-    margin-top: -4px;
-}
-
-/* Chip Groups */
-.chip-group { display: flex; flex-wrap: wrap; gap: 6px; }
-.filter-chip {
-    font-size: 12px;
-    padding: 5px 13px;
+    padding: 4px 12px;
     border-radius: 20px;
     border: 1.5px solid #ddd;
     background: #f7f7f7;
@@ -596,118 +523,108 @@ $all_place_names_json  = json_encode($all_place_names,  JSON_UNESCAPED_UNICODE);
     transition: all .15s;
     user-select: none;
 }
-.filter-chip:hover { border-color: #2d7a3a; color: #2d7a3a; }
-.filter-chip.sel { background: #e6f4ea; border-color: #2d7a3a; color: #1e6b2b; font-weight: 600; }
+.fn-chip:hover { border-color: #2d7a3a; color: #2d7a3a; }
+.fn-chip.sel { background: #e6f4ea; border-color: #2d7a3a; color: #1e6b2b; font-weight: 600; }
 
-/* Place Search */
-.place-search-wrap { position: relative; margin-bottom: 8px; }
-.place-search-icon {
-    position: absolute;
-    left: 10px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #aaa;
-    font-size: 13px;
-    pointer-events: none;
-}
-.place-search-input {
+.fn-place-search { position: relative; margin-bottom: 8px; }
+.fn-place-search input {
     width: 100%;
-    font-size: 13px;
-    padding: 7px 10px 7px 30px;
+    box-sizing: border-box;
+    font-size: 12px;
+    padding: 7px 10px 7px 28px;
     border-radius: 8px;
     border: 1.5px solid #ddd;
     background: #f7f7f7;
-    color: #333;
-    font-family: inherit;
     outline: none;
+    font-family: inherit;
     transition: border-color .15s;
 }
-.place-search-input:focus { border-color: #2d7a3a; background: #fff; }
-.place-chips-wrap {
+.fn-place-search input:focus { border-color: #2d7a3a; background: #fff; }
+.fn-search-icon {
+    position: absolute;
+    left: 9px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #aaa;
+    font-size: 12px;
+    pointer-events: none;
+}
+.fn-place-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    max-height: 100px;
-    overflow-y: auto;
-    padding-right: 2px;
-}
-
-/* Active filter tags */
-.active-filter-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    padding: 12px 20px;
-    border-top: 1px solid #f0f0f0;
-    background: #fafcfa;
-}
-.af-tag {
-    display: inline-flex;
-    align-items: center;
     gap: 5px;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 4px 9px;
-    border-radius: 20px;
-    background: #e6f4ea;
-    color: #1e6b2b;
-    border: 1px solid #b7ddbf;
+    max-height: 96px;
+    overflow-y: auto;
 }
-.af-tag-x {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: #1e6b2b;
-    font-size: 11px;
-    padding: 0;
-    line-height: 1;
-    opacity: .7;
-    font-weight: 700;
-}
-.af-tag-x:hover { opacity: 1; }
 
-/* Filter Footer */
-.adv-filter-footer {
+.fn-vis-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.fn-vis-row label { font-size: 12px; color: #666; width: 38px; flex-shrink: 0; }
+.fn-vis-row input[type=range] { flex: 1; accent-color: #2d7a3a; cursor: pointer; }
+.fn-vis-val {
+    font-size: 11px;
+    font-weight: 700;
+    color: #2d7a3a;
+    background: #e6f4ea;
+    padding: 2px 6px;
+    border-radius: 6px;
+    min-width: 32px;
+    text-align: center;
+}
+
+.fn-panel-footer {
     display: flex;
     justify-content: flex-end;
-    align-items: center;
-    gap: 10px;
-    padding: 14px 20px;
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
     border-top: 1px solid #f0f0f0;
-    background: #fafcfa;
 }
-.btn-filter-reset {
-    font-size: 13px;
-    padding: 7px 16px;
+.fn-footer-reset {
+    font-size: 12px;
+    padding: 5px 12px;
     border-radius: 8px;
     border: 1.5px solid #ddd;
     background: #fff;
-    color: #666;
+    color: #888;
     cursor: pointer;
     font-family: inherit;
-    transition: all .15s;
 }
-.btn-filter-reset:hover { border-color: #c0392b; color: #c0392b; }
-
-.btn-filter-apply {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    font-size: 13px;
+.fn-footer-reset:hover { border-color: #c0392b; color: #c0392b; }
+.fn-footer-done {
+    font-size: 12px;
     font-weight: 600;
-    padding: 8px 22px;
+    padding: 5px 14px;
     border-radius: 8px;
     border: none;
     background: #2d7a3a;
     color: #fff;
     cursor: pointer;
     font-family: inherit;
-    transition: background .15s;
 }
-.btn-filter-apply:hover { background: #235f2d; }
-.btn-filter-apply:disabled { background: #aaa; cursor: not-allowed; }
+.fn-footer-done:hover { background: #235f2d; }
 
-/* ── Date Range Bar (เดิม ปรับเป็น compact) ── */
+.fn-apply-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 18px;
+    border-radius: 20px;
+    border: none;
+    background: #2d7a3a;
+    color: #fff;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .15s;
+    margin-left: auto;
+}
+.fn-apply-btn:hover { background: #235f2d; }
+.fn-apply-btn:disabled { background: #aaa; cursor: not-allowed; }
+
+.fn-sep { width: 1px; height: 24px; background: #e0e0e0; margin: 0 2px; flex-shrink: 0; }
+
+/* ── Date Range Bar ── */
 .date-range-bar {
     display: flex;
     align-items: center;
@@ -737,7 +654,6 @@ $all_place_names_json  = json_encode($all_place_names,  JSON_UNESCAPED_UNICODE);
 .chart-subtitle    { font-size: 12px; color: #999; margin: 0 0 14px; }
 .chart-container   { position: relative; width: 100%; }
 
-/* Age Bar */
 .age-bar-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 18px; }
 .age-bar-item { display: grid; grid-template-columns: 56px 1fr 56px; align-items: center; gap: 12px; }
 .age-label    { font-size: 13px; color: #555; font-weight: 500; }
@@ -745,17 +661,14 @@ $all_place_names_json  = json_encode($all_place_names,  JSON_UNESCAPED_UNICODE);
 .age-fill     { height: 100%; border-radius: 99px; transition: width 1s ease; }
 .age-pct      { font-size: 12px; font-weight: 600; color: #333; text-align: center; background: #f5f5f5; border: 1px solid #e0e0e0; border-radius: 6px; padding: 2px 6px; }
 
-/* Export Buttons */
 .export-bar  { display: flex; gap: 10px; justify-content: flex-end; margin-bottom: 20px; }
 .btn-export  { display: flex; align-items: center; gap: 6px; padding: 7px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; border: none; cursor: pointer; transition: opacity .15s; }
 .btn-export:hover { opacity: .85; }
 .btn-excel { background: #1d6f42; color: #fff; }
 .btn-pdf   { background: #c0392b; color: #fff; }
 
-/* Empty State */
 .empty-state { text-align: center; padding: 32px 0; color: #bbb; font-size: 13px; }
 
-/* Chart Loading */
 .chart-wrap { position: relative; }
 .chart-loading {
     position: absolute; inset: 0;
@@ -766,15 +679,10 @@ $all_place_names_json  = json_encode($all_place_names,  JSON_UNESCAPED_UNICODE);
     z-index: 10;
 }
 
-/* % Badge */
 .pct-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 8px; border-radius: 20px; margin-top: 5px; }
 .pct-up   { background: #e6f4ea; color: #1e6b2b; }
 .pct-down { background: #fdecea; color: #c0392b; }
 .pct-flat { background: #f5f5f5; color: #888; }
-
-/* Collapse arrow */
-.collapse-arrow { transition: transform .2s; display: inline-block; }
-.collapsed .collapse-arrow { transform: rotate(-90deg); }
 </style>
 
 <div class="dashboard-wrapper">
@@ -826,133 +734,153 @@ $all_place_names_json  = json_encode($all_place_names,  JSON_UNESCAPED_UNICODE);
   </div>
 
   <!-- ═══════════════════════════════════════════
-       Advanced Filter Panel
+       Filter Navbar
   ════════════════════════════════════════════ -->
-  <div class="adv-filter-panel" id="advFilterPanel">
+  <div class="filter-navbar" id="filterNavbar">
 
-    <!-- Header -->
-    <div class="adv-filter-header" onclick="toggleAdvFilter()">
-      <div class="adv-filter-header-left">
-        <i class="fa fa-sliders-h" style="color:#2d7a3a; font-size:15px;"></i>
-        ตัวกรองข้อมูล
-        <span class="adv-filter-count-badge" id="filterCountBadge">0</span>
-      </div>
-      <button class="adv-filter-toggle-btn" onclick="event.stopPropagation(); toggleAdvFilter()">
-        <span class="collapse-arrow" id="advCollapseArrow">▾</span>
-        <span id="advToggleLabel">ซ่อน</span>
+    <!-- ① ช่วงเวลา -->
+    <div class="fn-dropdown" id="dd-time">
+      <button class="fn-btn active" id="btn-time" onclick="toggleDropdown('time')">
+        <i class="fa fa-calendar-alt" style="font-size:12px;"></i>
+        <span id="btn-time-label">ช่วงเวลา</span>
+        <span class="fn-chevron">▾</span>
       </button>
+      <div class="fn-panel" id="panel-time">
+        <div class="fn-panel-label">ช่วงเวลา</div>
+        <div class="fn-quick-dates">
+          <button class="fn-chip sel" data-range="7d"       onclick="setFnRange('7d',       this)">7 วัน</button>
+          <button class="fn-chip"    data-range="today"     onclick="setFnRange('today',     this)">วันนี้</button>
+          <button class="fn-chip"    data-range="yesterday" onclick="setFnRange('yesterday', this)">เมื่อวาน</button>
+          <button class="fn-chip"    data-range="30d"       onclick="setFnRange('30d',       this)">30 วัน</button>
+          <button class="fn-chip"    data-range="thismonth" onclick="setFnRange('thismonth', this)">เดือนนี้</button>
+          <button class="fn-chip"    data-range="lastmonth" onclick="setFnRange('lastmonth', this)">เดือนที่แล้ว</button>
+          <button class="fn-chip"    data-range="alltime"   onclick="setFnRangeAllTime(this)">ทั้งหมด</button>
+          <button class="fn-chip"    data-range="custom"    onclick="setFnRange('custom',    this)">กำหนดเอง</button>
+        </div>
+        <div class="fn-custom-date" id="fnCustomDateRow" style="display:none;">
+          <div class="fn-date-wrap">
+            <i class="fa fa-calendar" style="color:#2d7a3a; font-size:11px;"></i>
+            <input type="date" id="fnDateFrom" value="<?= $default_from ?>">
+          </div>
+          <span style="color:#bbb; font-size:13px;">—</span>
+          <div class="fn-date-wrap">
+            <i class="fa fa-calendar" style="color:#2d7a3a; font-size:11px;"></i>
+            <input type="date" id="fnDateTo" value="<?= $default_to ?>">
+          </div>
+        </div>
+        <div class="fn-panel-footer">
+          <button class="fn-footer-done" onclick="closeDropdown('time')">เสร็จสิ้น</button>
+        </div>
+      </div>
     </div>
 
-    <!-- Body -->
-    <div id="advFilterBody">
-
-      <div class="adv-filter-body">
-
-        <!-- Row 1: ช่วงเวลา + จำนวนผู้เข้าชม -->
-        <div class="adv-filter-grid2">
-
-          <!-- ช่วงเวลา -->
-          <div>
-            <div class="adv-filter-section-label">ช่วงเวลา</div>
-            <div class="quick-date-row">
-              <button class="qdrange-btn active" data-range="7d"        onclick="setAdvRange('7d',        this)">7 วัน</button>
-              <button class="qdrange-btn"        data-range="today"      onclick="setAdvRange('today',      this)">วันนี้</button>
-              <button class="qdrange-btn"        data-range="yesterday"  onclick="setAdvRange('yesterday',  this)">เมื่อวาน</button>
-              <button class="qdrange-btn"        data-range="30d"        onclick="setAdvRange('30d',        this)">30 วัน</button>
-              <button class="qdrange-btn"        data-range="thismonth"  onclick="setAdvRange('thismonth',  this)">เดือนนี้</button>
-              <button class="qdrange-btn"        data-range="lastmonth"  onclick="setAdvRange('lastmonth',  this)">เดือนที่แล้ว</button>
-              <button class="qdrange-btn"        data-range="alltime"    onclick="setAdvRangeAllTime(this)">ทั้งหมด</button>
-              <button class="qdrange-btn"        data-range="custom"     onclick="setAdvRange('custom',     this)">กำหนดเอง</button>
-            </div>
-            <div class="custom-date-row" id="advCustomDateRow" style="display:none;">
-              <div class="custom-date-input-wrap">
-                <i class="fa fa-calendar" style="color:#2d7a3a; font-size:12px;"></i>
-                <input type="date" id="advDateFrom" value="<?= $default_from ?>">
-              </div>
-              <span class="custom-date-sep">—</span>
-              <div class="custom-date-input-wrap">
-                <i class="fa fa-calendar" style="color:#2d7a3a; font-size:12px;"></i>
-                <input type="date" id="advDateTo" value="<?= $default_to ?>">
-              </div>
-            </div>
-          </div>
-
-          <!-- จำนวนผู้เข้าชม -->
-          <div>
-            <div class="adv-filter-section-label">จำนวนผู้เข้าชมต่อวัน (คน)</div>
-            <div class="vis-range-wrap">
-              <div class="vis-range-row">
-                <label>ต่ำสุด</label>
-                <input type="range" id="visMin" min="0" max="500" step="10" value="0"
-                  oninput="document.getElementById('visMinVal').textContent=this.value; syncVisRange();">
-                <span class="vis-range-val" id="visMinVal">0</span>
-              </div>
-              <div class="vis-range-row">
-                <label>สูงสุด</label>
-                <input type="range" id="visMax" min="0" max="500" step="10" value="500"
-                  oninput="document.getElementById('visMaxVal').textContent=this.value; syncVisRange();">
-                <span class="vis-range-val" id="visMaxVal">500</span>
-              </div>
-              <div class="vis-range-scale"><span>0</span><span>250</span><span>500+</span></div>
-            </div>
-          </div>
+    <!-- ② เพศ -->
+    <div class="fn-dropdown" id="dd-gender">
+      <button class="fn-btn" id="btn-gender" onclick="toggleDropdown('gender')">
+        <i class="fa fa-venus-mars" style="font-size:12px;"></i>
+        <span id="btn-gender-label">เพศ</span>
+        <span class="fn-chevron">▾</span>
+      </button>
+      <div class="fn-panel" id="panel-gender">
+        <div class="fn-panel-label">เพศ (เลือกได้หลายเพศ)</div>
+        <div class="fn-chips" id="fnGenderChips">
+          <span class="fn-chip" onclick="toggleFnChip(this,'gender')">เพศชาย</span>
+          <span class="fn-chip" onclick="toggleFnChip(this,'gender')">เพศหญิง</span>
+          <span class="fn-chip" onclick="toggleFnChip(this,'gender')">LGBTQ+</span>
+          <span class="fn-chip" onclick="toggleFnChip(this,'gender')">ไม่ระบุ</span>
         </div>
-
-        <div class="adv-filter-divider"></div>
-
-        <!-- Row 2: ช่วงอายุ + เพศ -->
-        <div class="adv-filter-grid2">
-          <div>
-            <div class="adv-filter-section-label">ช่วงอายุ (เลือกได้หลายช่วง)</div>
-            <div class="chip-group" id="ageChipGroup">
-              <?php foreach (['15-25','26-35','36-45','46-55','56-65','65+'] as $ar): ?>
-              <span class="filter-chip" onclick="toggleFilterChip(this, 'age')"><?= $ar ?></span>
-              <?php endforeach; ?>
-            </div>
-          </div>
-          <div>
-            <div class="adv-filter-section-label">เพศ (เลือกได้หลายเพศ)</div>
-            <div class="chip-group" id="genderChipGroup">
-              <span class="filter-chip" onclick="toggleFilterChip(this, 'gender')">เพศชาย</span>
-              <span class="filter-chip" onclick="toggleFilterChip(this, 'gender')">เพศหญิง</span>
-              <span class="filter-chip" onclick="toggleFilterChip(this, 'gender')">LGBTQ+</span>
-              <span class="filter-chip" onclick="toggleFilterChip(this, 'gender')">ไม่ระบุ</span>
-            </div>
-          </div>
+        <div class="fn-panel-footer">
+          <button class="fn-footer-reset" onclick="clearFnGroup('gender')">ล้าง</button>
+          <button class="fn-footer-done" onclick="closeDropdown('gender')">เสร็จสิ้น</button>
         </div>
-
-        <div class="adv-filter-divider"></div>
-
-        <!-- Row 3: สถานที่ -->
-        <div>
-          <div class="adv-filter-section-label">สถานที่ (เลือกได้หลายสถานที่)</div>
-          <div class="place-search-wrap">
-            <i class="fa fa-search place-search-icon"></i>
-            <input type="text" class="place-search-input" id="placeSearchInput"
-              placeholder="ค้นหาสถานที่..." oninput="filterPlaceChips(this.value)">
-          </div>
-          <div class="place-chips-wrap" id="placeChipsWrap"></div>
-        </div>
-
-      </div><!-- /.adv-filter-body -->
-
-      <!-- Active Tags -->
-      <div class="active-filter-tags" id="activeFilterTags" style="display:none;"></div>
-
-      <!-- Footer -->
-      <div class="adv-filter-footer">
-        <button class="btn-filter-reset" onclick="resetAdvFilter()">
-          <i class="fa fa-undo" style="font-size:12px;"></i> รีเซ็ตทั้งหมด
-        </button>
-        <button class="btn-filter-apply" id="btnAdvApply" onclick="applyAdvFilter()">
-          <i class="fa fa-filter"></i> กรองข้อมูล
-        </button>
       </div>
+    </div>
 
-    </div><!-- /#advFilterBody -->
-  </div><!-- /.adv-filter-panel -->
+    <!-- ③ ช่วงอายุ -->
+    <div class="fn-dropdown" id="dd-age">
+      <button class="fn-btn" id="btn-age" onclick="toggleDropdown('age')">
+        <i class="fa fa-users" style="font-size:12px;"></i>
+        <span id="btn-age-label">ช่วงอายุ</span>
+        <span class="fn-chevron">▾</span>
+      </button>
+      <div class="fn-panel" id="panel-age">
+        <div class="fn-panel-label">ช่วงอายุ (เลือกได้หลายช่วง)</div>
+        <div class="fn-chips" id="fnAgeChips">
+          <?php foreach (['15-25','26-35','36-45','46-55','56-65','65+'] as $ar): ?>
+          <span class="fn-chip" onclick="toggleFnChip(this,'age')"><?= $ar ?></span>
+          <?php endforeach; ?>
+        </div>
+        <div class="fn-panel-footer">
+          <button class="fn-footer-reset" onclick="clearFnGroup('age')">ล้าง</button>
+          <button class="fn-footer-done" onclick="closeDropdown('age')">เสร็จสิ้น</button>
+        </div>
+      </div>
+    </div>
 
-  <!-- Date Range Info Bar (compact) -->
+    <!-- ④ สถานที่ -->
+    <div class="fn-dropdown" id="dd-place">
+      <button class="fn-btn" id="btn-place" onclick="toggleDropdown('place')">
+        <i class="fa fa-map-marker-alt" style="font-size:12px;"></i>
+        <span id="btn-place-label">สถานที่</span>
+        <span class="fn-chevron">▾</span>
+      </button>
+      <div class="fn-panel" id="panel-place" style="min-width:300px;">
+        <div class="fn-panel-label">สถานที่ (เลือกได้หลายแห่ง)</div>
+        <div class="fn-place-search">
+          <i class="fa fa-search fn-search-icon"></i>
+          <input type="text" id="fnPlaceSearch" placeholder="ค้นหาสถานที่..."
+                 oninput="filterFnPlaces(this.value)">
+        </div>
+        <div class="fn-place-chips" id="fnPlaceChips"></div>
+        <div class="fn-panel-footer">
+          <button class="fn-footer-reset" onclick="clearFnGroup('place')">ล้าง</button>
+          <button class="fn-footer-done" onclick="closeDropdown('place')">เสร็จสิ้น</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ⑤ ผู้เข้าชม/วัน -->
+    <div class="fn-dropdown" id="dd-vis">
+      <button class="fn-btn" id="btn-vis" onclick="toggleDropdown('vis')">
+        <i class="fa fa-chart-bar" style="font-size:12px;"></i>
+        <span id="btn-vis-label">ผู้เข้าชม/วัน</span>
+        <span class="fn-chevron">▾</span>
+      </button>
+      <div class="fn-panel" id="panel-vis">
+        <div class="fn-panel-label">จำนวนผู้เข้าชมต่อวัน (คน)</div>
+        <div class="fn-vis-row">
+          <label>ต่ำสุด</label>
+          <input type="range" id="fnVisMin" min="0" max="500" step="10" value="0"
+                 oninput="document.getElementById('fnVisMinVal').textContent=this.value; syncFnVis();">
+          <span class="fn-vis-val" id="fnVisMinVal">0</span>
+        </div>
+        <div class="fn-vis-row">
+          <label>สูงสุด</label>
+          <input type="range" id="fnVisMax" min="0" max="500" step="10" value="500"
+                 oninput="document.getElementById('fnVisMaxVal').textContent=this.value; syncFnVis();">
+          <span class="fn-vis-val" id="fnVisMaxVal">500</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:10px; color:#bbb; margin-top:-4px; padding:0 2px;">
+          <span>0</span><span>250</span><span>500+</span>
+        </div>
+        <div class="fn-panel-footer">
+          <button class="fn-footer-reset" onclick="resetFnVis()">ล้าง</button>
+          <button class="fn-footer-done" onclick="closeDropdown('vis')">เสร็จสิ้น</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="fn-sep"></div>
+
+    <!-- ⑥ ปุ่มกรอง -->
+    <button class="fn-apply-btn" id="btnFnApply" onclick="applyAdvFilter()">
+      <i class="fa fa-filter"></i> กรอง
+      <span class="fn-badge" id="fnCountBadge" style="display:none;">0</span>
+    </button>
+
+  </div><!-- /.filter-navbar -->
+
+  <!-- Date Range Info Bar -->
   <div class="date-range-bar">
     <i class="fa fa-calendar-alt" style="color:#2d7a3a; font-size:14px;"></i>
     <label>กำลังแสดง:</label>
@@ -963,7 +891,6 @@ $all_place_names_json  = json_encode($all_place_names,  JSON_UNESCAPED_UNICODE);
   <!-- Chart Grid 2×2 -->
   <div class="chart-grid">
 
-    <!-- กราฟที่ 1: ผู้เข้าชมรายวัน -->
     <div class="chart-card">
       <h4>ผู้เข้าใช้งานเว็บไซต์</h4>
       <p class="chart-subtitle" id="visitorSubtitle">7 วันย้อนหลัง</p>
@@ -977,7 +904,6 @@ $all_place_names_json  = json_encode($all_place_names,  JSON_UNESCAPED_UNICODE);
       </div>
     </div>
 
-    <!-- กราฟที่ 2: Top 5 สถานที่ -->
     <div class="chart-card">
       <h4>สถานที่ที่มีผู้เข้าชมมากที่สุด</h4>
       <p class="chart-subtitle">Top 5</p>
@@ -997,7 +923,6 @@ $all_place_names_json  = json_encode($all_place_names,  JSON_UNESCAPED_UNICODE);
       </div>
     </div>
 
-    <!-- กราฟที่ 3: ช่วงอายุ -->
     <div class="chart-card">
       <h4>ช่วงอายุของผู้ใช้งานเว็บไซต์</h4>
       <p class="chart-subtitle" id="ageSubtitle">
@@ -1028,7 +953,6 @@ $all_place_names_json  = json_encode($all_place_names,  JSON_UNESCAPED_UNICODE);
       </ul>
     </div>
 
-    <!-- กราฟที่ 4: เพศ -->
     <div class="chart-card">
       <h4>เพศของผู้ใช้งานเว็บไซต์</h4>
       <p class="chart-subtitle" id="genderSubtitle">
@@ -1050,13 +974,10 @@ $all_place_names_json  = json_encode($all_place_names,  JSON_UNESCAPED_UNICODE);
       </div>
     </div>
 
-  </div><!-- /.chart-grid -->
-</div><!-- /.dashboard-wrapper -->
+  </div>
+</div>
 
 <script>
-// ============================================================
-//  ข้อมูลเริ่มต้น
-// ============================================================
 const visitorLabels0 = <?= $visitor_labels_json ?>;
 const visitorData0   = <?= $visitor_data_json ?>;
 const placeLabels0   = <?= $top_place_labels_json ?>;
@@ -1065,56 +986,37 @@ const genderLabels0  = <?= $gender_labels_json ?>;
 const genderData0    = <?= $gender_data_json ?>;
 const ALL_PLACES     = <?= $all_place_names_json ?>;
 
-// ============================================================
-//  สี
-// ============================================================
 const DAY_COLOR = {
-    'อาทิตย์': '#e53e3e',
-    'จันทร์':  '#ecc94b',
-    'อังคาร':  '#d53f8c',
-    'พุธ':     '#38a169',
-    'พฤหัส':   '#dd6b20',
-    'ศุกร์':   '#3182ce',
-    'เสาร์':   '#805ad5',
+    'อาทิตย์': '#e53e3e', 'จันทร์': '#ecc94b', 'อังคาร': '#d53f8c',
+    'พุธ': '#38a169', 'พฤหัส': '#dd6b20', 'ศุกร์': '#3182ce', 'เสาร์': '#805ad5',
 };
-function dayColor(label) {
-    return DAY_COLOR[label.split(' ')[0]] || '#aaa';
-}
-const ageColors  = ['#2d7a3a','#d4a017','#c0796a','#2c3e7a','#e07b30','#5b8de8'];
-const gColorMap  = { 'เพศชาย':'#2c3e7a','เพศหญิง':'#d4a017','LGBTQ+':'#c0796a','ไม่ระบุ':'#aaa' };
+function dayColor(label) { return DAY_COLOR[label.split(' ')[0]] || '#aaa'; }
+const ageColors = ['#2d7a3a','#d4a017','#c0796a','#2c3e7a','#e07b30','#5b8de8'];
+const gColorMap = { 'เพศชาย':'#2c3e7a','เพศหญิง':'#d4a017','LGBTQ+':'#c0796a','ไม่ระบุ':'#aaa' };
 
-// ============================================================
-//  State ตัวกรอง
-// ============================================================
-let advPanelOpen  = true;
-let advCurRange   = '7d';
-let selAges       = new Set();
-let selGenders    = new Set();
-let selPlaces     = new Set();
-let filteredPlaces = [...ALL_PLACES];
+// ── Filter State ──
+let advCurRange      = '7d';
+let selAges          = new Set();
+let selGenders       = new Set();
+let selPlaces        = new Set();
+let filteredFnPlaces = [...ALL_PLACES];
+let openDD           = null;
 
-// ============================================================
-//  Charts
-// ============================================================
+const RANGE_LABELS = {
+    today:'วันนี้', yesterday:'เมื่อวาน', '7d':'7 วัน',
+    '30d':'30 วัน', thismonth:'เดือนนี้', lastmonth:'เดือนที่แล้ว',
+    alltime:'ทั้งหมด', custom:'กำหนดเอง'
+};
+
 let visitorChart, placeChart = null, genderChart = null;
 
-// ============================================================
-//  Init เมื่อ DOM พร้อม
-// ============================================================
 document.addEventListener('DOMContentLoaded', () => {
-
-    // กราฟผู้เข้าชม
     visitorChart = new Chart(
         document.getElementById('visitorChart').getContext('2d'), {
             type: 'bar',
             data: {
                 labels: visitorLabels0,
-                datasets: [{
-                    data: visitorData0,
-                    backgroundColor: visitorLabels0.map(dayColor),
-                    borderRadius: 6,
-                    borderSkipped: false,
-                }],
+                datasets: [{ data: visitorData0, backgroundColor: visitorLabels0.map(dayColor), borderRadius: 6, borderSkipped: false }],
             },
             options: {
                 responsive: true, maintainAspectRatio: false,
@@ -1127,7 +1029,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     );
 
-    // กราฟ Top 5 สถานที่
     if (placeData0.some(v => v > 0)) {
         placeChart = new Chart(
             document.getElementById('placeChart').getContext('2d'), {
@@ -1148,20 +1049,13 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
-    // กราฟเพศ
     if (genderData0.some(v => v > 0)) {
         genderChart = new Chart(
             document.getElementById('genderChart').getContext('2d'), {
                 type: 'doughnut',
                 data: {
                     labels: genderLabels0,
-                    datasets: [{
-                        data: genderData0,
-                        backgroundColor: genderLabels0.map(l => gColorMap[l] || '#5b8de8'),
-                        borderWidth: genderData0.map(v => v === 0 ? 0 : 3),
-                        borderColor: '#fff',
-                        hoverOffset: 6,
-                    }],
+                    datasets: [{ data: genderData0, backgroundColor: genderLabels0.map(l => gColorMap[l] || '#5b8de8'), borderWidth: genderData0.map(v => v === 0 ? 0 : 3), borderColor: '#fff', hoverOffset: 6 }],
                 },
                 options: {
                     responsive: true, maintainAspectRatio: false, cutout: '60%',
@@ -1174,220 +1068,202 @@ document.addEventListener('DOMContentLoaded', () => {
         );
     }
 
-    // สร้าง Place Chips
-    renderPlaceChips();
+    renderFnPlaceChips();
 });
 
-// ============================================================
-//  Advanced Filter Panel: Toggle
-// ============================================================
-function toggleAdvFilter() {
-    advPanelOpen = !advPanelOpen;
-    document.getElementById('advFilterBody').style.display  = advPanelOpen ? '' : 'none';
-    document.getElementById('advToggleLabel').textContent   = advPanelOpen ? 'ซ่อน' : 'แสดง';
-    document.getElementById('advCollapseArrow').style.transform = advPanelOpen ? '' : 'rotate(-90deg)';
+// ── Dropdown ──
+function toggleDropdown(name) {
+    if (openDD && openDD !== name) {
+        document.getElementById('panel-' + openDD).classList.remove('show');
+        document.getElementById('btn-' + openDD).classList.remove('open');
+    }
+    const panel = document.getElementById('panel-' + name);
+    const btn   = document.getElementById('btn-' + name);
+    const isOpen = panel.classList.contains('show');
+    panel.classList.toggle('show', !isOpen);
+    btn.classList.toggle('open', !isOpen);
+    openDD = isOpen ? null : name;
 }
 
-// ============================================================
-//  ช่วงเวลาด่วน
-// ============================================================
-function setAdvRange(range, btn) {
+function closeDropdown(name) {
+    document.getElementById('panel-' + name).classList.remove('show');
+    document.getElementById('btn-' + name).classList.remove('open');
+    if (openDD === name) openDD = null;
+    updateFnBadge();
+}
+
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.fn-dropdown')) {
+        document.querySelectorAll('.fn-panel.show').forEach(p => p.classList.remove('show'));
+        document.querySelectorAll('.fn-btn.open').forEach(b => b.classList.remove('open'));
+        openDD = null;
+    }
+});
+
+// ── Date Range ──
+function setFnRange(range, btn) {
     advCurRange = range;
-    document.querySelectorAll('.qdrange-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('advCustomDateRow').style.display = range === 'custom' ? 'flex' : 'none';
-    updateFilterBadge();
+    document.querySelectorAll('#panel-time .fn-chip').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    document.getElementById('fnCustomDateRow').style.display = range === 'custom' ? 'flex' : 'none';
+    updateFnBadge();
 }
 
-function setAdvRangeAllTime(btn) {
+function setFnRangeAllTime(btn) {
     advCurRange = 'alltime';
-    document.querySelectorAll('.qdrange-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('advCustomDateRow').style.display = 'none';
-
+    document.querySelectorAll('#panel-time .fn-chip').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    document.getElementById('fnCustomDateRow').style.display = 'none';
     fetch('dashboard.php?ajax=1&get_min_date=1')
         .then(r => r.json())
         .then(d => {
-            document.getElementById('advDateFrom').value = d.min_date || '2026-01-01';
-            document.getElementById('advDateTo').value   = new Date().toISOString().slice(0, 10);
+            document.getElementById('fnDateFrom').value = d.min_date || '2026-01-01';
+            document.getElementById('fnDateTo').value   = new Date().toISOString().slice(0, 10);
         })
         .catch(() => {
-            document.getElementById('advDateFrom').value = '2026-01-01';
-            document.getElementById('advDateTo').value   = new Date().toISOString().slice(0, 10);
+            document.getElementById('fnDateFrom').value = '2026-01-01';
+            document.getElementById('fnDateTo').value   = new Date().toISOString().slice(0, 10);
         });
-    updateFilterBadge();
+    updateFnBadge();
 }
 
 function getDateRangeFromMode() {
-    const today     = new Date();
-    const todayStr  = today.toISOString().slice(0, 10);
-
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().slice(0, 10);
-
+    const today    = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+    const yd       = new Date(today); yd.setDate(yd.getDate() - 1);
+    const ydStr    = yd.toISOString().slice(0, 10);
     switch (advCurRange) {
-        case 'today':
-            return { from: todayStr, to: todayStr };
-        case 'yesterday':
-            return { from: yesterdayStr, to: yesterdayStr };
-        case '7d': {
-            const d = new Date(today); d.setDate(d.getDate() - 6);
-            return { from: d.toISOString().slice(0, 10), to: todayStr };
-        }
-        case '30d': {
-            const d = new Date(today); d.setDate(d.getDate() - 29);
-            return { from: d.toISOString().slice(0, 10), to: todayStr };
-        }
-        case 'thismonth': {
-            const d = new Date(today.getFullYear(), today.getMonth(), 1);
-            return { from: d.toISOString().slice(0, 10), to: todayStr };
-        }
-        case 'lastmonth': {
-            const first = new Date(today.getFullYear(), today.getMonth() - 1, 1);
-            const last  = new Date(today.getFullYear(), today.getMonth(), 0);
-            return { from: first.toISOString().slice(0, 10), to: last.toISOString().slice(0, 10) };
-        }
-        case 'custom':
-            return {
-                from: document.getElementById('advDateFrom').value,
-                to:   document.getElementById('advDateTo').value,
-            };
-        case 'alltime':
-            return {
-                from: document.getElementById('advDateFrom').value || '2020-01-01',
-                to:   todayStr,
-            };
-        default:
-            return { from: todayStr, to: todayStr };
+        case 'today':     return { from: todayStr, to: todayStr };
+        case 'yesterday': return { from: ydStr, to: ydStr };
+        case '7d': { const d = new Date(today); d.setDate(d.getDate()-6); return { from: d.toISOString().slice(0,10), to: todayStr }; }
+        case '30d': { const d = new Date(today); d.setDate(d.getDate()-29); return { from: d.toISOString().slice(0,10), to: todayStr }; }
+        case 'thismonth': { const d = new Date(today.getFullYear(), today.getMonth(), 1); return { from: d.toISOString().slice(0,10), to: todayStr }; }
+        case 'lastmonth': { const f = new Date(today.getFullYear(), today.getMonth()-1, 1); const l = new Date(today.getFullYear(), today.getMonth(), 0); return { from: f.toISOString().slice(0,10), to: l.toISOString().slice(0,10) }; }
+        case 'custom':  return { from: document.getElementById('fnDateFrom').value, to: document.getElementById('fnDateTo').value };
+        case 'alltime': return { from: document.getElementById('fnDateFrom').value || '2020-01-01', to: todayStr };
+        default: return { from: todayStr, to: todayStr };
     }
 }
 
-// ============================================================
-//  Chip Toggle (อายุ + เพศ)
-// ============================================================
-function toggleFilterChip(el, group) {
+// ── Chip Toggle ──
+function toggleFnChip(el, group) {
     const val = el.textContent.trim();
     const set = group === 'age' ? selAges : selGenders;
     if (set.has(val)) { set.delete(val); el.classList.remove('sel'); }
     else              { set.add(val);    el.classList.add('sel');    }
-    updateFilterBadge();
+    updateFnBadge();
 }
 
-// ============================================================
-//  Place Chips
-// ============================================================
-function renderPlaceChips() {
-    const wrap = document.getElementById('placeChipsWrap');
+function clearFnGroup(group) {
+    if (group === 'age') {
+        selAges.clear();
+        document.querySelectorAll('#fnAgeChips .fn-chip').forEach(c => c.classList.remove('sel'));
+    } else if (group === 'gender') {
+        selGenders.clear();
+        document.querySelectorAll('#fnGenderChips .fn-chip').forEach(c => c.classList.remove('sel'));
+    } else if (group === 'place') {
+        selPlaces.clear();
+        renderFnPlaceChips();
+    }
+    updateFnBadge();
+}
+
+// ── Place Chips ──
+function renderFnPlaceChips() {
+    const wrap = document.getElementById('fnPlaceChips');
     wrap.innerHTML = '';
-    filteredPlaces.forEach(p => {
+    filteredFnPlaces.forEach(p => {
         const span = document.createElement('span');
-        span.className = 'filter-chip' + (selPlaces.has(p) ? ' sel' : '');
+        span.className = 'fn-chip' + (selPlaces.has(p) ? ' sel' : '');
         span.textContent = p;
         span.onclick = () => {
             if (selPlaces.has(p)) { selPlaces.delete(p); span.classList.remove('sel'); }
             else                  { selPlaces.add(p);    span.classList.add('sel');    }
-            updateFilterBadge();
+            updateFnBadge();
         };
         wrap.appendChild(span);
     });
 }
 
-function filterPlaceChips(q) {
-    filteredPlaces = q
+function filterFnPlaces(q) {
+    filteredFnPlaces = q
         ? ALL_PLACES.filter(p => p.toLowerCase().includes(q.toLowerCase()))
         : [...ALL_PLACES];
-    renderPlaceChips();
+    renderFnPlaceChips();
 }
 
-// ============================================================
-//  Visitor Range Sync
-// ============================================================
-function syncVisRange() {
-    const mn = parseInt(document.getElementById('visMin').value);
-    const mx = parseInt(document.getElementById('visMax').value);
+// ── Visitor Range ──
+function syncFnVis() {
+    const mn = parseInt(document.getElementById('fnVisMin').value);
+    const mx = parseInt(document.getElementById('fnVisMax').value);
     if (mn > mx) {
-        document.getElementById('visMin').value = mx;
-        document.getElementById('visMinVal').textContent = mx;
+        document.getElementById('fnVisMin').value = mx;
+        document.getElementById('fnVisMinVal').textContent = mx;
     }
-    updateFilterBadge();
+    updateFnBadge();
 }
 
-// ============================================================
-//  Badge + Active Tags
-// ============================================================
-function updateFilterBadge() {
+function resetFnVis() {
+    document.getElementById('fnVisMin').value = 0;
+    document.getElementById('fnVisMax').value = 500;
+    document.getElementById('fnVisMinVal').textContent = 0;
+    document.getElementById('fnVisMaxVal').textContent = 500;
+    updateFnBadge();
+}
+
+// ── Badge & Button Labels ──
+function updateFnBadge() {
     let count = 0;
     if (advCurRange !== '7d') count++;
-    const mn = parseInt(document.getElementById('visMin').value);
-    const mx = parseInt(document.getElementById('visMax').value);
+    const mn = parseInt(document.getElementById('fnVisMin').value);
+    const mx = parseInt(document.getElementById('fnVisMax').value);
     if (mn > 0 || mx < 500) count++;
     count += selAges.size + selGenders.size + selPlaces.size;
 
-    const badge = document.getElementById('filterCountBadge');
+    const badge = document.getElementById('fnCountBadge');
     badge.textContent = count;
-    badge.classList.toggle('show', count > 0);
+    badge.style.display = count > 0 ? 'inline-block' : 'none';
 
-    renderActiveTags();
+    const timeBtn = document.getElementById('btn-time');
+    document.getElementById('btn-time-label').textContent =
+        advCurRange !== '7d' ? (RANGE_LABELS[advCurRange] || 'ช่วงเวลา') : 'ช่วงเวลา';
+    timeBtn.classList.toggle('active', advCurRange !== '7d');
+
+    document.getElementById('btn-gender-label').textContent =
+        selGenders.size > 0 ? `เพศ (${selGenders.size})` : 'เพศ';
+    document.getElementById('btn-gender').classList.toggle('active', selGenders.size > 0);
+
+    document.getElementById('btn-age-label').textContent =
+        selAges.size > 0 ? `ช่วงอายุ (${selAges.size})` : 'ช่วงอายุ';
+    document.getElementById('btn-age').classList.toggle('active', selAges.size > 0);
+
+    document.getElementById('btn-place-label').textContent =
+        selPlaces.size > 0 ? `สถานที่ (${selPlaces.size})` : 'สถานที่';
+    document.getElementById('btn-place').classList.toggle('active', selPlaces.size > 0);
+
+    const visActive = mn > 0 || mx < 500;
+    document.getElementById('btn-vis-label').textContent =
+        visActive ? `ผู้เข้าชม (${mn}–${mx})` : 'ผู้เข้าชม/วัน';
+    document.getElementById('btn-vis').classList.toggle('active', visActive);
 }
 
-const RANGE_LABELS = {
-    today:'วันนี้', yesterday:'เมื่อวาน', '7d':'7 วัน',
-    '30d':'30 วัน', thismonth:'เดือนนี้', lastmonth:'เดือนที่แล้ว',
-    alltime:'ทั้งหมด', custom:'กำหนดเอง'
-};
-
-function renderActiveTags() {
-    const wrap = document.getElementById('activeFilterTags');
-    const tags = [];
-
-    if (advCurRange !== '7d') tags.push({ text: 'เวลา: ' + RANGE_LABELS[advCurRange], clear: () => { setAdvRange('7d', document.querySelector('[data-range="7d"]')); } });
-
-    const mn = parseInt(document.getElementById('visMin').value);
-    const mx = parseInt(document.getElementById('visMax').value);
-    if (mn > 0 || mx < 500) tags.push({ text: `ผู้เข้าชม: ${mn}–${mx} คน`, clear: () => { document.getElementById('visMin').value = 0; document.getElementById('visMax').value = 500; document.getElementById('visMinVal').textContent = 0; document.getElementById('visMaxVal').textContent = 500; updateFilterBadge(); } });
-
-    selAges.forEach(a => tags.push({ text: 'อายุ: ' + a, clear: () => { selAges.delete(a); document.querySelectorAll('#ageChipGroup .filter-chip').forEach(c => { if (c.textContent.trim() === a) c.classList.remove('sel'); }); updateFilterBadge(); } }));
-    selGenders.forEach(g => tags.push({ text: 'เพศ: ' + g, clear: () => { selGenders.delete(g); document.querySelectorAll('#genderChipGroup .filter-chip').forEach(c => { if (c.textContent.trim() === g) c.classList.remove('sel'); }); updateFilterBadge(); } }));
-    selPlaces.forEach(p => tags.push({ text: 'สถานที่: ' + p, clear: () => { selPlaces.delete(p); renderPlaceChips(); updateFilterBadge(); } }));
-
-    if (tags.length === 0) { wrap.style.display = 'none'; return; }
-    wrap.style.display = 'flex';
-    wrap.innerHTML = '';
-    tags.forEach((tag, idx) => {
-        const span = document.createElement('span');
-        span.className = 'af-tag';
-        span.innerHTML = tag.text + ` <button class="af-tag-x" title="ลบ">✕</button>`;
-        span.querySelector('.af-tag-x').onclick = () => tag.clear();
-        wrap.appendChild(span);
-    });
-}
-
-// ============================================================
-//  Reset
-// ============================================================
+// ── Reset All ──
 function resetAdvFilter() {
     advCurRange = '7d';
-    document.querySelectorAll('.qdrange-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector('[data-range="7d"]').classList.add('active');
-    document.getElementById('advCustomDateRow').style.display = 'none';
-
-    document.getElementById('visMin').value = 0;
-    document.getElementById('visMax').value = 500;
-    document.getElementById('visMinVal').textContent = 0;
-    document.getElementById('visMaxVal').textContent = 500;
-
-    selAges.clear(); selGenders.clear(); selPlaces.clear();
-    document.querySelectorAll('#ageChipGroup .filter-chip, #genderChipGroup .filter-chip').forEach(c => c.classList.remove('sel'));
-    document.getElementById('placeSearchInput').value = '';
-    filteredPlaces = [...ALL_PLACES];
-    renderPlaceChips();
-    updateFilterBadge();
+    document.querySelectorAll('#panel-time .fn-chip').forEach(b => b.classList.remove('sel'));
+    document.querySelector('#panel-time [data-range="7d"]').classList.add('sel');
+    document.getElementById('fnCustomDateRow').style.display = 'none';
+    resetFnVis();
+    clearFnGroup('age');
+    clearFnGroup('gender');
+    clearFnGroup('place');
+    document.getElementById('fnPlaceSearch').value = '';
+    filteredFnPlaces = [...ALL_PLACES];
+    renderFnPlaceChips();
+    updateFnBadge();
 }
 
-// ============================================================
-//  Apply: ดึงข้อมูลจาก AJAX พร้อม filter ทั้งหมด
-// ============================================================
+// ── Apply Filter ──
 async function applyAdvFilter() {
     const { from, to } = getDateRangeFromMode();
 
@@ -1396,7 +1272,7 @@ async function applyAdvFilter() {
         return;
     }
 
-    const btn = document.getElementById('btnAdvApply');
+    const btn = document.getElementById('btnFnApply');
     btn.disabled  = true;
     btn.innerHTML = '<i class="fa fa-spinner fa-spin"></i> กำลังโหลด...';
 
@@ -1409,8 +1285,8 @@ async function applyAdvFilter() {
         const ageParam    = [...selAges].join(',');
         const genderParam = [...selGenders].join(',');
         const placeParam  = [...selPlaces].join(',');
-        const visMin      = document.getElementById('visMin').value;
-        const visMax      = document.getElementById('visMax').value;
+        const visMin      = document.getElementById('fnVisMin').value;
+        const visMax      = document.getElementById('fnVisMax').value;
 
         const url = `dashboard.php?ajax=1&date_from=${from}&date_to=${to}`
                   + `&age=${encodeURIComponent(ageParam)}`
@@ -1421,7 +1297,6 @@ async function applyAdvFilter() {
         const res  = await fetch(url);
         const data = await res.json();
 
-        // อัปเดตกราฟผู้เข้าชม
         visitorChart.data.labels                      = data.visitor_labels;
         visitorChart.data.datasets[0].data            = data.visitor_data;
         visitorChart.data.datasets[0].backgroundColor = data.visitor_labels.map(dayColor);
@@ -1437,7 +1312,6 @@ async function applyAdvFilter() {
         document.getElementById('visitorPctBadge').innerHTML =
             pctHTML(data.visitor_pct, 'จากช่วงก่อนหน้า');
 
-        // อัปเดต Top 5 สถานที่
         const hasPlace = data.place_data.some(v => v > 0);
         document.getElementById('placeEmpty').style.display     = hasPlace ? 'none'  : 'block';
         document.getElementById('placeChartWrap').style.display = hasPlace ? 'block' : 'none';
@@ -1468,7 +1342,6 @@ async function applyAdvFilter() {
             }
         }
 
-        // อัปเดต Age Bar
         const ageList = document.getElementById('ageBarList');
         ageList.innerHTML = '';
         data.age.forEach((a, i) => {
@@ -1488,9 +1361,8 @@ async function applyAdvFilter() {
         document.getElementById('ageSubtitle').textContent =
             `จากแบบสอบถาม (ทั้งหมด ${data.age_total} คน)`;
 
-        // อัปเดตกราฟเพศ
         const hasGender = data.gender_data.some(v => v > 0);
-        document.getElementById('genderEmpty').style.display    = hasGender ? 'none'  : 'block';
+        document.getElementById('genderEmpty').style.display     = hasGender ? 'none'  : 'block';
         document.getElementById('genderChartWrap').style.display = hasGender ? 'block' : 'none';
 
         if (hasGender) {
@@ -1524,7 +1396,6 @@ async function applyAdvFilter() {
         document.getElementById('genderSubtitle').textContent =
             `จากแบบสอบถาม (ทั้งหมด ${data.gender_total} คน)`;
 
-        // อัปเดต Info Bar
         document.getElementById('dateRangeInfo').textContent =
             `${fmtTH(from)} – ${fmtTH(to)}`;
 
@@ -1545,13 +1416,12 @@ async function applyAdvFilter() {
             if (el) el.style.display = 'none';
         });
         btn.disabled  = false;
-        btn.innerHTML = '<i class="fa fa-filter"></i> กรองข้อมูล';
+        btn.innerHTML = '<i class="fa fa-filter"></i> กรอง <span class="fn-badge" id="fnCountBadge" style="display:none;">0</span>';
+        updateFnBadge();
     }
 }
 
-// ============================================================
-//  Helpers
-// ============================================================
+// ── Helpers ──
 function pctHTML(p, l) {
     if (p > 0) return `<span class='pct-badge pct-up'><i class='fa fa-arrow-up'></i> +${p}% ${l}</span>`;
     if (p < 0) return `<span class='pct-badge pct-down'><i class='fa fa-arrow-down'></i> ${p}% ${l}</span>`;
@@ -1564,9 +1434,7 @@ function fmtTH(iso) {
     return `${parseInt(d)} ${ms[parseInt(m) - 1]} ${parseInt(y) + 543}`;
 }
 
-// ============================================================
-//  Export Excel
-// ============================================================
+// ── Export Excel ──
 function exportExcel() {
     if (typeof XLSX === 'undefined') {
         const s = document.createElement('script');
@@ -1624,9 +1492,7 @@ function doExcel() {
     XLSX.writeFile(wb, 'dashboard_report_' + new Date().toISOString().slice(0, 10) + '.xlsx');
 }
 
-// ============================================================
-//  Export PDF
-// ============================================================
+// ── Export PDF ──
 function exportPDF() {
     const libs = [
         { id: 'jspdf-lib', src: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js' },
