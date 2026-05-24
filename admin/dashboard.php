@@ -42,7 +42,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
         $extra_visitor_where .= " AND age_range IN (" . implode(',', $safe_ages) . ")";
     }
     if (!empty($filter_genders)) {
-        $gender_map = ['เพศชาย' => 'male', 'เพศหญิง' => 'female', 'LGBTQ+' => 'lgbtq+', 'ไม่ระบุ' => 'unspecified'];
+        $gender_map = ['เพศชาย' => 'male', 'เพศหญิง' => 'female', 'LGBTQ+' => 'lgbtq+'];
         $safe_genders = array_map(function($g) use ($conn, $gender_map) {
             $db_val = $gender_map[$g] ?? $g;
             return "'" . mysqli_real_escape_string($conn, $db_val) . "'";
@@ -152,7 +152,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] === '1') {
             'male'        => 'เพศชาย',
             'female'      => 'เพศหญิง',
             'lgbtq+'      => 'LGBTQ+',
-            'unspecified' => 'ไม่ระบุ',
             default       => $grow['gender'],
         };
         $g_labels[] = $lbl;
@@ -773,7 +772,6 @@ $all_place_names_json  = json_encode($all_place_names,  JSON_UNESCAPED_UNICODE);
           <span class="fn-chip" onclick="toggleFnChip(this,'gender')">เพศชาย</span>
           <span class="fn-chip" onclick="toggleFnChip(this,'gender')">เพศหญิง</span>
           <span class="fn-chip" onclick="toggleFnChip(this,'gender')">LGBTQ+</span>
-          <span class="fn-chip" onclick="toggleFnChip(this,'gender')">ไม่ระบุ</span>
         </div>
         <div class="fn-panel-footer">
           <button class="fn-footer-reset" onclick="clearFnGroup('gender')">ล้าง</button>
@@ -954,7 +952,7 @@ const DAY_COLOR = {
 };
 function dayColor(label) { return DAY_COLOR[label.split(' ')[0]] || '#aaa'; }
 const ageColors = ['#2d7a3a','#d4a017','#c0796a','#2c3e7a','#e07b30','#5b8de8'];
-const gColorMap = { 'เพศชาย':'#2c3e7a','เพศหญิง':'#d4a017','LGBTQ+':'#c0796a','ไม่ระบุ':'#aaa' };
+const gColorMap = { 'เพศชาย':'#2c3e7a','เพศหญิง':'#d4a017','LGBTQ+':'#c0796a'};
 
 // ── Filter State ──
 let advCurRange      = '7d';
