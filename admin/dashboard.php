@@ -309,7 +309,6 @@ while ($grow = mysqli_fetch_assoc($gender_res)) {
         'male'        => 'เพศชาย',
         'female'      => 'เพศหญิง',
         'lgbtq+'      => 'LGBTQ+',
-        'unspecified' => 'ไม่ระบุ',
         default       => $grow['gender'],
     };
     $gender_labels[] = $lbl;
