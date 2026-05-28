@@ -528,7 +528,7 @@ section {
 
 /* About Section */
 .about-section {
-  min-height: 335;
+  min-height: 335px;
   height: auto;
   padding: 40px 0;
   background: linear-gradient(135deg,
