@@ -40,7 +40,6 @@
                 <a href="#about">ABOUT US</a>
             </nav>
 
-
         </div>
     </header>
 
